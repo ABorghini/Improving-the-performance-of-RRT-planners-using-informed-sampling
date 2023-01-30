@@ -45,8 +45,8 @@ def main():
     iterations = args.iter
     c_best = args.c_best
 
-    x_start = (18, 8)  # Starting node
-    x_goal = (37, 18)  # Goal node
+    x_start = (15, 15)  # Starting node
+    x_goal = (25, 25)  # Goal node
     env = Env(x_start=x_start, x_goal=x_goal, delta=0.5)
 
     # CREATION ENVIRONMENT
