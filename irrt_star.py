@@ -78,7 +78,7 @@ class Informed_RRT_Star(RRT_Star):
         n = len(V) + 1
         # r2 = (search_radius * math.sqrt((math.log(n) / n))) ** 2
         r = min((search_radius * math.sqrt((math.log(n) / n))), self.step_len)
-        # DA RIVEDERE STA COSA DEL RAGGIO PD
+        # DA RIVEDERE STA COSA DEL RAGGIO
         #print("r2",r2)
         self.step_len = r
         r2 = r**2
