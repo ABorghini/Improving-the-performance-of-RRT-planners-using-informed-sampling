@@ -23,5 +23,7 @@ In order to run different configurations the following arguments must be added:
 ```
 ## Authors
 Alessia Borghini
+
 Luca Corvitto
+
 Federico Di Valerio
