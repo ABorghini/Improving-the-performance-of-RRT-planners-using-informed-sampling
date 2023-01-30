@@ -20,10 +20,14 @@ def create_env(env, rnd, n_obs):
 
   else: #fixed environment
     obs_rectangle = [
-            [14, 12, 8, 2],
-            [18, 22, 8, 3],
-            [26, 7, 2, 12],
-            [32, 14, 10, 2]
+            [0, 9, 7, 0.5],
+            [5, 4, 6, 0.7],
+            [10, 0, 1, 9],
+            [4, 12.9, 11, 0.7],
+            [8, 13, 0.7, 5],
+            [12, 16, 0.7, 4],
+            [15, 4, 0.5, 13],
+            [17, 15, 3, 0.5]
         ]
 
     for rect in obs_rectangle:
@@ -45,8 +49,8 @@ def main():
     iterations = args.iter
     c_best = args.c_best
 
-    x_start = (15, 15)  # Starting node
-    x_goal = (25, 25)  # Goal node
+    x_start = (2, 2)  # Starting node
+    x_goal = (18, 18)  # Goal node
     env = Env(x_start=x_start, x_goal=x_goal, delta=0.5)
 
     # CREATION ENVIRONMENT
