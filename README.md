@@ -21,9 +21,3 @@ In order to run different configurations the following arguments must be added:
 -it <number_if_iterations> # it will specify the number of iterations of the algorithm (default is set to 500)
 -c <cost_of_the_best_path> # it will specify the minimum value of the cost of the best path the user want to achieve (the default value is 0.0, in this way the algorithm will stop when it reaches the max number of iterations)
 ```
-## Authors
-Alessia Borghini
-
-Luca Corvitto
-
-Federico Di Valerio
