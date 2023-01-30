@@ -13,7 +13,7 @@ class Node:
         return False
 
 class Env:
-    def __init__(self, x_start, x_goal, w = 50, h = 30, thickness = 1, delta = 0.5):
+    def __init__(self, x_start, x_goal, w = 30, h = 30, thickness = 1, delta = 0.5):
         self.x_range = (0, w)
         self.y_range = (0, h)
         self.x_start = x_start
