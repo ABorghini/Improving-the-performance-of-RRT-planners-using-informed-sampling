@@ -17,7 +17,7 @@ In this implementation we present the rrt* algorithm in 4 different ways. The im
 In this section we present the different commands useful to run the code.
 The following command will run the code using the default values, so it will start a simulation of RRT* with a fixed environment and a fixed number of iterations.
 ```
-python main.py
+$python main.py
 ```
 In order to run different configurations the following arguments must be added:
 ```
