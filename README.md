@@ -1,11 +1,17 @@
 # Improving-the-performance-of-RRT-planners-using-informed-sampling
 
+##Work in progress
+The current implementation of the Kinodynamic RRT* do not support the configurations specified below, to run it simply write in the terminal:
+```
+$python rrtkino_w_main.py
+```
+
 ## About
 In this implementation we present the rrt* algorithm in 4 different ways. The implementations are:
 * RRT*
 * Informed RRT*
-* Kynodinamic RRT* on Double Integrator
-* Kynodinamic Informed RRT* on Double Integrator (with Metropolis-Hastings sampler) 
+* Kinodynamic RRT* on Double Integrator
+* Kinodynamic Informed RRT* on Double Integrator (with Metropolis-Hastings sampler) 
 
 ## Simulations
 In this section we present the different commands useful to run the code.
