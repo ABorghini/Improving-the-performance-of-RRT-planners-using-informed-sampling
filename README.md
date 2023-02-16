@@ -1,6 +1,6 @@
 # Improving-the-performance-of-RRT-planners-using-informed-sampling
 
-##Work in progress
+## Work in progress
 The current implementation of the Kinodynamic RRT* do not support the configurations specified below, to run it simply write in the terminal:
 ```
 $python rrtkino_w_main.py
