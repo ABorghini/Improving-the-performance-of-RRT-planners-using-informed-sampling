@@ -13,6 +13,8 @@ from random import random
 from collections import deque
 from utils import plot_grid, plot_kino
 from jenkins_traub import *
+from sympy.printing.aesaracode import aesara_function
+import time as timing
 
 class RRT_Star_Kino(RRT_Star):
     def __init__(self, env = None, x_start= None, x_goal= None, step_len= None,
@@ -51,7 +53,7 @@ class RRT_Star_Kino(RRT_Star):
         self.t = Symbol("t")
         # self.t_s = Symbol("t_s")
 
-        self.iter_max = 5
+        self.iter_max = 7
         self.delta = 0.5
         self.goal_sample_rate = 0.1
         self.V = []
@@ -75,36 +77,40 @@ class RRT_Star_Kino(RRT_Star):
         self.tau = Symbol('tau')
 
         # Distance
-        G_ = simplify(exp(self.A * (self.tau - x))) * self.B * self.R.inv() * self.B.T * simplify(exp(self.A.T * (self.tau - x)))
-        x_bar_ = simplify(exp(self.A * (self.tau - self.ts))) * self.c
-        self.x_bar = simplify(exp(self.A * self.tau)) * self.x0 + integrate(x_bar_,(self.ts,0,self.tau))
+        G_ = lambdify([self.tau, x], simplify(exp(self.A * (self.tau - x))) * self.B * self.R.inv() * self.B.T * simplify(exp(self.A.T * (self.tau - x))), "numpy")
+        x_bar_ = lambdify([self.tau, self.ts], simplify(exp(self.A * (self.tau - self.ts))) * self.c, "numpy")
+        # sympy
+        self.x_bar = lambdify([self.tau, self.ts, self.x0], simplify(exp(self.A * self.tau)) * Matrix(self.x0) + integrate(Matrix(x_bar_(self.tau, self.ts)),(self.ts,0,self.tau)), "numpy")
 
-        self.G = integrate(G_,(x,0,self.tau))
-
-        self.d = self.G.inv() * (self.x1 - self.x_bar)
+        self.G = lambdify([self.tau, x], integrate(Matrix(G_(self.tau, x)),(x,0,self.tau)), "numpy")
+        
+        # sympy
+        self.d = lambdify([self.x1, self.tau, self.ts, self.x0, x], Matrix(self.G(self.tau, x)).inv() * (Matrix(self.x1) - self.x_bar(self.tau, self.ts, self.x0)), "numpy")
 
         # Tau*
-        self.tau_star = eye(1) - 2 * (self.A * self.x1 + self.c).T * self.d - self.d.T * self.B * self.R * self.B.T * self.d
+        tau_star_ = eye(1) - 2 * (self.A * Matrix(self.x1) + self.c).T * self.d(self.x1, self.tau, self.ts, self.x0, x) - self.d(self.x1, self.tau, self.ts, self.x0, x).T * self.B * self.R * self.B.T * self.d(self.x1, self.tau, self.ts, self.x0, x)
+        self.tau_star = lambdify([self.x0, self.x1], tau_star_, "numpy")
 
         # Cost
-        self.cost_tau = Matrix([self.tau]) + (self.x1 - self.x_bar).T * integrate(G_,(x,0,self.tau)).inv() * (self.x1 - self.x_bar)
+        self.cost_tau = lambdify([self.tau, x, self.x0, self.x1], Matrix([self.tau]) + (self.x1 - self.x_bar(self.tau, self.ts, self.x0)).T * integrate(Matrix(G_(self.tau, x)),(x,0,self.tau)).inv() * (self.x1 - self.x_bar(self.tau, self.ts, self.x0)), "numpy")
 
         # States
         mat = Matrix([[self.A, self.B * self.R.inv() * self.B.T],
                     [zeros(self.state_dims, self.state_dims), -self.A.T]])
 
-        exp_mat1 = simplify(exp(mat * (self.t - x)))
-        exp_mat2 = simplify(exp(mat * (self.t - self.tau)))
+        exp_mat1 = lambdify([self.t, x], simplify(exp(mat * (self.t - x))), "numpy")
+        exp_mat2 = lambdify([self.tau, self.t], simplify(exp(mat * (self.t - self.tau))), "numpy")
 
-        solution_ = exp_mat1 * Matrix([[self.c], [zeros(self.state_dims, 1)]])
-        state0 = exp_mat2 * BlockMatrix([[self.x1], [self.d]])
+        solution_ = lambdify([self.t, x], exp_mat1(self.t, x) * Matrix([[self.c], [zeros(self.state_dims, 1)]]), "numpy")
 
-        sol =  state0 + integrate(solution_,(x,self.tau,self.t))
+        state0 = lambdify([self.tau, self.t, self.ts, self.x0, self.x1, x], exp_mat2(self.tau, self.t) * Matrix(BlockMatrix([[self.x1],[Matrix(self.d(self.x1, self.tau, self.ts, self.x0, x))]])), "numpy")
 
-        self.states = sol[0:self.state_dims]
+        sol =  lambdify([self.tau, self.t, x, self.x0, self.x1], state0(self.tau, self.t, self.ts, self.x0, self.x1, x) + integrate(Matrix(solution_(self.t, x)),(x,self.tau,self.t)), "numpy")
+
+        self.states = lambdify([self.tau, self.t, x, self.x0, self.x1], Matrix(sol(self.tau, self.t, x, self.x0, self.x1))[0:self.state_dims], "numpy")
 
         # Control
-        self.control_ = self.R.inv() * self.B.T * simplify(exp(self.A.T*(self.tau-self.t)))*integrate(G_,(x,0,self.tau)).inv() * (self.x1 - self.x_bar)
+        self.control_ = lambdify([self.tau, self.t, x, self.x0, self.x1], self.R.inv() * self.B.T * simplify(exp(self.A.T*(self.tau-self.t)))*integrate(Matrix(G_(self.tau, x)),(x,0,self.tau)).inv() * (Matrix(self.x1) - self.x_bar(self.tau, self.ts, self.x0)), "numpy")
         
 
     def planning(self):
@@ -132,6 +138,7 @@ class RRT_Star_Kino(RRT_Star):
         self.V.append(self.x_start)
         # otteniamo states e inputs con t, x0 e x1 fissati. poi sostituiamo t_s con i valori nel range (sampling)
         states, inputs = self.eval_states_and_inputs(self.x_start.node ,self.x_goal.node ,time) 
+        print(states, inputs)
         # print("states and inputs")
         # print(states, inputs)
 
@@ -201,6 +208,7 @@ class RRT_Star_Kino(RRT_Star):
                     x_rand.cost2goal = cost
                     # x_rand.time2goal = time
                     x_best = x_rand
+                    print("TROVATA SOLUZIONE")
 
             self.V.append(x_rand)
 
@@ -221,14 +229,14 @@ class RRT_Star_Kino(RRT_Star):
         # plt.show()
 
 
-    def states_eq(self, tau_star, x0, x1):
+    # def states_eq(self, tau_star, x0, x1):
 
-        return self.states.subs({self.tau: tau_star, self.x0: x0, self.x1: x1}).as_explicit()
+    #     return self.states.subs({self.tau: tau_star, self.x0: x0, self.x1: x1}).as_explicit()
     
 
-    def control(self, tau, x0, x1):
+    # def control(self, tau, x0, x1):
 
-        return self.control_.subs({self.tau: tau, self.x0: x0, self.x1: x1}).as_explicit()
+    #     return self.control_.subs({self.tau: tau, self.x0: x0, self.x1: x1}).as_explicit()
     
     # to be continued###################################################
     def sq_distance(self, t, t_s, x0, x1):
@@ -247,44 +255,56 @@ class RRT_Star_Kino(RRT_Star):
         return res_distance
 
 
-    def cost_eq(self, time, x0, x1):
+    # def cost_eq(self, time, x0, x1):
 
-        return self.cost_tau.subs({self.tau: time, self.x0: x0, self.x1: x1}).as_explicit()
+    #     return self.cost_tau.subs({self.tau: time, self.x0: x0, self.x1: x1}).as_explicit()
 
 
     def eval_arrival_time(self, x0_, x1_):
-        tau_star = self.tau_star.subs({self.x0: x0_, self.x1: x1_}).as_explicit()
+        # tau_star = self.tau_star.subs({self.x0: x0_, self.x1: x1_}).as_explicit()
+        # s = timing.time()
+        tau_star = Matrix(self.tau_star(x0_, x1_))
+        # e = timing.time()
+        # print("lamb", e-s)
+        
+        p = Poly(tau_star[0]).all_coeffs()
+        time_vec = np.roots(p)
 
-        p = Poly(tau_star[0])
-        time_vec = roots(p, 1/self.tau).items()
-
-        time = min([t[0] for t in time_vec if im(t[0])==0 and re(t[0])>=0])
+        time = max([re(t) for t in time_vec if im(t)==0 and re(t)>=0])
         return 1/time
 
 
     def eval_cost(self, x0, x1, time=None):
         # print('EVAL COST')
-        x0 = x0
-        x1 = x1
+        # x0 = x0
+        # x1 = x1
 
         if time==None:
+            # s = timing.time()
             time = self.eval_arrival_time(x0, x1)
+            # e = timing.time()
+            # print("tau star", e-s)
 
-        cost = self.cost_eq(time, x0, x1)
+        cost = self.cost_tau(time, x, x0, x1)
         # print('cost and time')
         # print(cost,time)
         return cost, time
 
     def eval_states_and_inputs(self, x0, x1, time=None):
         # print('EVAL STATES AND INPUTS')
-        x0 = x0
-        x1 = x1
+        # x0 = x0
+        # x1 = x1
 
         if time==None:
             time = self.eval_arrival_time(x0, x1)
 
-        states = self.states_eq(time, x0, x1)
-        inputs = self.control(time, x0, x1)
+        # s = timing.time()
+        states = lambdify([x, self.t], self.states(time, self.t, x, x0, x1))
+        # e = timing.time()
+        # print("states", e-s)
+        inputs = lambdify([x, self.t], Matrix(self.control_(time, self.t, x, x0, x1)))
+        # e2 = timing.time()
+        # print("inputs", e2-e)
 
         return states, inputs 
 
@@ -295,7 +315,11 @@ class RRT_Star_Kino(RRT_Star):
         r = np.arange(t_init/step, t_goal/step)*step
 
         for time_step in r:
-            state = states.subs(self.t, time_step)
+            # s = timing.time()
+            state = states(self.t, time_step)
+            # e = timing.time()
+            # print("state internal", e-s)
+
             # print("state")
             # print(state)
             for i in range(len(self.state_limits)):
@@ -326,7 +350,10 @@ class RRT_Star_Kino(RRT_Star):
         r = np.arange(t_init/step, t_goal/step)*step
 
         for time_step in r:
-            inp = inputs.subs(self.t, time_step)
+            # s = timing.time()
+            inp = inputs(self.t, time_step)
+            # e = timing.time()
+            # print("input internal", e-s)
 
             for i in range(len(self.input_limits)):
                 if inp[i] < self.input_limits[i][0] or inp[i] > self.input_limits[i][1]:
@@ -365,6 +392,7 @@ class RRT_Star_Kino(RRT_Star):
             min_time = np.inf
 
             for node in self.V:
+                # s = timing.time()
                 cost, time = self.eval_cost(node.node, x_rand.node)
                 cost = cost[0]
                 # cost, time = self.aux(node.node, x_rand.node)
@@ -383,6 +411,9 @@ class RRT_Star_Kino(RRT_Star):
                         min_cost = cost+node.cost
                         min_time = time+node.time
                         min_node = node
+
+                # e = timing.time()
+                # print(e-s)
 
         # self.V[self.V.index(min_node)].cost = min_cost
         # self.V[self.V.index(min_node)].time = min_time
@@ -445,7 +476,6 @@ def create_env(env, rnd, n_obs = 0):
         for rect in obs_rectangle:
             env.add_rectangle(rect[0], rect[1], rect[2], rect[3])
 
-       
 
 def main():
     # A = zeros(4,4)
@@ -464,8 +494,6 @@ def main():
     # plt.show()
     # print(rrtkino.aux(rrtkino.x_start.node,rrtkino.x_goal.node))
     rrtkino.planning()
-
-
 
     # t = Symbol('t')
     # t_s = Symbol('t_s')
