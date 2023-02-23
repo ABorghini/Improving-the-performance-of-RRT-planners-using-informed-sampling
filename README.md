@@ -1,6 +1,6 @@
 # Improving-the-performance-of-RRT-planners-using-informed-sampling
 
-##Update
+## Update
 The implementation of the Kinodynamic RRT* has been improved, now it is faster.
 
 ## Work in progress
