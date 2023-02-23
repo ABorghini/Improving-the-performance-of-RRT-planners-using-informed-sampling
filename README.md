@@ -1,5 +1,8 @@
 # Improving-the-performance-of-RRT-planners-using-informed-sampling
 
+##Update
+The implementation of the Kinodynamic RRT* has been improved, now it is faster.
+
 ## Work in progress
 The current implementation of the Kinodynamic RRT* do not support the configurations specified below, to run it simply write in the terminal:
 ```
