@@ -42,22 +42,22 @@ class Informed_RRT_Star(RRT_Star):
             x_nearest = self.Nearest(x_rand)
             x_new = self.Steer(x_nearest, x_rand)
 
-            if not self.env.is_collision(x_nearest, x_new):
+            if not self.env.isCollision(x_nearest, x_new):
                 X_near = self.Near(self.V, x_new, self.r_RRT) # r_RRT
                 c_min = self.Cost(x_nearest, x_new)
 
                 # choose parent
-                x_new, _ = self.choose_parent(X_near, x_new, c_min)
+                x_new, _ = self.ChooseParent(X_near, x_new, c_min)
 
                 self.V.append(x_new)
 
-                # rewire
-                self.rewire(X_near, x_new)
+                # Rewire
+                self.Rewire(X_near, x_new)
                 
                 x_new = self.V[self.V.index(x_new)]
                
                 if self.InGoalRegion(x_new):
-                    if not self.env.is_collision(x_new, self.x_goal):
+                    if not self.env.isCollision(x_new, self.x_goal):
                         self.X_soln.add(x_new)
 
             # print("iter",i)
@@ -78,12 +78,12 @@ class Informed_RRT_Star(RRT_Star):
         n = len(V) + 1
         # r2 = (search_radius * math.sqrt((math.log(n) / n))) ** 2
         r = min((search_radius * math.sqrt((math.log(n) / n))), self.step_len)
-        # CHECK RADIUS
+        # DA RIVEDERE STA COSA DEL RAGGIO PD
         #print("r2",r2)
         self.step_len = r
         r2 = r**2
         dist_table = [(n.x - x_new.x) ** 2 + (n.y - x_new.y) ** 2 for n in V]
-        X_near = [v for v in V if dist_table[V.index(v)] <= r2 and not self.env.is_collision(v, x_new)]
+        X_near = [v for v in V if dist_table[V.index(v)] <= r2 and not self.env.isCollision(v, x_new)]
         
         return X_near
 
