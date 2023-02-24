@@ -1,5 +1,6 @@
 import numpy as np
 import math
+from sympy import *
 
 class Node:
     def __init__(self, n):
@@ -13,7 +14,7 @@ class Node:
         return False
 
 class Env:
-    def __init__(self, x_start, x_goal, w = 20, h = 20, thickness = 0.3, delta = 0.5):
+    def __init__(self, x_start, x_goal, w = 50, h = 30, thickness = 1, delta = 0.5):
         self.x_range = (0, w)
         self.y_range = (0, h)
         self.x_start = x_start
@@ -22,6 +23,7 @@ class Env:
         self.thickness = thickness
         self.obs_boundary = self.boundaries()
         self.obs_rectangle = []
+
 
     def boundaries(self):
         obs_boundary = [
@@ -79,7 +81,7 @@ class Env:
         return False
 
 
-    def is_collision(self, start, end):
+    def isCollision(self, start, end):
         if self.is_inside_obs(start) or self.is_inside_obs(end):
             return True
 
@@ -123,3 +125,7 @@ class Env:
     @staticmethod
     def get_dist(start, end):
         return math.hypot(end.x - start.x, end.y - start.y)
+
+
+
+
