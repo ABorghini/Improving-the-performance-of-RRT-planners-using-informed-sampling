@@ -7,6 +7,8 @@ import sys
 import numpy as np
 import math
 from scipy.spatial.transform import Rotation as Rot
+from sympy.abc import x
+from sympy import *
 
 
 def plot(algo, iteration, x_center=None, c_best=np.inf, dist=None, theta=None):
@@ -91,9 +93,9 @@ def plot_kino(rrtk, x_center=None, c_best=np.inf, dist=None, theta=None):
             break
         t_goal = rrtk.eval_arrival_time(node, path[idx+1])
         times = np.arange(0, t_goal/step)*step
-        states = rrtk.states_eq(t_goal, node, path[idx+1])
+        states = lambdify([rrtk.x, rrtk.t], rrtk.states(t_goal, rrtk.t, rrtk.x, node, path[idx+1]), "numpy")
         
-        states_list.extend([states.subs({rrtk.t:t})[0:2] for t in times])
+        states_list.extend([states(rrtk.t, t)[0:2] for t in times])
 
     print(states_list)
     x, y = zip(*states_list)
@@ -104,6 +106,9 @@ def plot_kino(rrtk, x_center=None, c_best=np.inf, dist=None, theta=None):
         y_ = []
     plt.plot(x,y, color='c')
     plt.plot(x_,y_, color='g', marker='o', linestyle='', markersize=4)
+    node_listx, node_listy, _, _ = zip(*[node.node for node in rrtk.V])
+    # print(rrtk.V)
+    plt.plot(node_listx, node_listy, marker='o', color= 'r', linestyle='', markersize=4)
     plt.show()
     plt.pause(0.01)
     return
