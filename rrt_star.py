@@ -11,7 +11,7 @@ from utils import plot
 
 class RRT_Star:
     def __init__(self, env, x_start, x_goal, step_len,
-                 goal_sample_rate, search_radius, iter_max, r_RRT, r_goal, stop_at):
+                 goal_sample_rate, search_radius, iter_max, r_RRT, stop_at):
 
         self.name = 'RRT*'
         self.x_start = Node(x_start)
@@ -21,10 +21,8 @@ class RRT_Star:
         self.search_radius = search_radius
         self.iter_max = iter_max
         self.r_RRT = r_RRT
-        self.r_goal = r_goal
         self.env = env
         self.stop_at = stop_at
-
         self.fig, self.ax = plt.subplots()
         self.delta = self.env.delta
         self.x_range = self.env.x_range
@@ -59,21 +57,21 @@ class RRT_Star:
             x_nearest = self.Nearest(x_rand)
             x_new = self.Steer(x_nearest, x_rand)
 
-            if not self.env.isCollision(x_nearest, x_new):
+            if not self.env.is_collision(x_nearest, x_new):
                 X_near = self.Near(self.V, x_new, self.r_RRT) # r_RRT
                 c_min = self.Cost(x_nearest, x_new)
 
                 # choose parent
-                x_new, _ = self.ChooseParent(X_near, x_new, c_min)
+                x_new, _ = self.choose_parent(X_near, x_new, c_min)
 
                 self.V.append(x_new)
 
-                # Rewire
-                self.Rewire(X_near, x_new)
+                # rewire
+                self.rewire(X_near, x_new)
 
                 x = self.V[self.V.index(x_new)]
                 
-                if x.equals(self.x_goal): #forse da eliminare
+                if x.equals(self.x_goal):
                     print('entrato')
                     x_best = x
                     c_best = self.Cost(x)
@@ -118,7 +116,7 @@ class RRT_Star:
         #     self.step_len = r
         r2 = r**2
         dist_table = [(n.x - x_new.x) ** 2 + (n.y - x_new.y) ** 2 for n in V]
-        X_near = [v for v in V if dist_table[V.index(v)] <= r2 and not self.env.isCollision(v, x_new)]
+        X_near = [v for v in V if dist_table[V.index(v)] <= r2 and not self.env.is_collision(v, x_new)]
         
         return X_near
 
@@ -130,15 +128,15 @@ class RRT_Star:
         else:
             return False
 
-    def ChooseParent(self, X_near, x_new, c_min):
+    def choose_parent(self, X_near, x_new, c_min):
         for x_near in X_near:
             c_new = self.Cost(x_near, x_new)
-            if c_new < c_min and not self.env.isCollision(x_near, x_new):
+            if c_new < c_min and not self.env.is_collision(x_near, x_new):
                 x_new.parent = x_near
                 c_min = c_new
         return x_new, c_min
 
-    def Rewire(self, X_near, x_new):
+    def rewire(self, X_near, x_new):
         for x_near in X_near:
             c_near = self.Cost(x_near)
             c_new = self.Cost(x_new, x_near)
