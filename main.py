@@ -2,15 +2,16 @@ from irrt_star import *
 from rrt_star import *
 import argparse
 
-
+random.seed(777)
+np.random.seed(777)
 
 def create_env(env, rnd, n_obs):
   if rnd:
     while len(env.obs_rectangle)!=n_obs:
       rnd_x = random.uniform(env.x_range[0], env.x_range[1])
       rnd_y = random.uniform(env.y_range[0], env.y_range[1])
-      rnd_w = random.uniform(0.5, 1.5)
-      rnd_h = random.uniform(0.5, 1.5)
+      rnd_w = random.uniform(0.5, 0.5)
+      rnd_h = random.uniform(0.5, 0.5)
     
       env.add_rectangle(rnd_x,rnd_y,rnd_w,rnd_h)
       #print("len",len(env.obs_rectangle))
@@ -45,8 +46,8 @@ def main():
     iterations = args.iter
     c_best = args.c_best
 
-    x_start = (18, 8)  # Starting node
-    x_goal = (37, 18)  # Goal node
+    x_start = (2, 2)  # Starting node
+    x_goal = (18, 18)  # Goal node
     env = Env(x_start=x_start, x_goal=x_goal, delta=0.5)
 
     # CREATION ENVIRONMENT
@@ -56,13 +57,14 @@ def main():
       rrt_star = Informed_RRT_Star(env = env, 
                                   x_start = x_start, 
                                   x_goal = x_goal, 
-                                  step_len = 10, 
+                                  step_len = 1, 
                                   goal_sample_rate = 0.10, 
                                   search_radius = 12, 
                                   iter_max = iterations,
                                   r_RRT = 10,
+                                  r_goal = 1,
                                   stop_at = c_best,
-                                  r_goal = 1)
+                                  rnd=random)
     else:
       rrt_star = RRT_Star(env = env, 
                                 x_start = x_start, 
@@ -72,7 +74,9 @@ def main():
                                 search_radius = 12, 
                                 iter_max = iterations,
                                 r_RRT = 20,
-                                stop_at = c_best)
+                                r_goal = 1,
+                                stop_at = c_best,
+                                rnd=random)
 
     rrt_star.planning()
 
