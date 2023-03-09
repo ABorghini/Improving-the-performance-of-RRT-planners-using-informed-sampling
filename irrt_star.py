@@ -7,21 +7,23 @@ import matplotlib.pyplot as plt
 from rrt_star import RRT_Star
 import random
 from env import Node, Env
-from utils import plot
-
-random.seed(777)
+from utils import plot, animate
 
 
 class Informed_RRT_Star(RRT_Star):
     def __init__(self, env, x_start, x_goal, step_len,
-                 goal_sample_rate, search_radius, iter_max, r_RRT, stop_at, r_goal):
+                 goal_sample_rate, search_radius, iter_max, r_RRT, r_goal, stop_at, rnd):
         
         super().__init__(env, x_start, x_goal, step_len,
                         goal_sample_rate, search_radius,
-                        iter_max, r_RRT,stop_at)   
-        self.name = 'IRRT*'
+                        iter_max, r_RRT, r_goal, stop_at,rnd)   
+        self.name = 'IRRT_star'
         self.X_soln = set()
-        self.r_goal = r_goal
+
+        if rnd:
+            self.plotting_path = f'{self.name}_imgs_max_{self.iter_max}_randEnv'
+        else:
+            self.plotting_path = f'{self.name}_imgs_max_{self.iter_max}_fixedEnv'
 
 
     def planning(self):
@@ -43,36 +45,38 @@ class Informed_RRT_Star(RRT_Star):
             x_nearest = self.Nearest(x_rand)
             x_new = self.Steer(x_nearest, x_rand)
 
-            if not self.env.is_collision(x_nearest, x_new):
+            if not self.env.isCollision(x_nearest, x_new):
                 X_near = self.Near(self.V, x_new, self.r_RRT) # r_RRT
                 c_min = self.Cost(x_nearest, x_new)
 
                 # choose parent
-                x_new, _ = self.choose_parent(X_near, x_new, c_min)
+                x_new, _ = self.ChooseParent(X_near, x_new, c_min)
 
                 self.V.append(x_new)
 
-                # rewire
-                self.rewire(X_near, x_new)
+                # Rewire
+                self.Rewire(X_near, x_new)
                 
                 x_new = self.V[self.V.index(x_new)]
                
                 if self.InGoalRegion(x_new):
-                    if not self.env.is_collision(x_new, self.x_goal):
+                    if not self.env.isCollision(x_new, self.x_goal):
                         self.X_soln.add(x_new)
 
             # print("iter",i)
             if i % 20 == 0 or i == self.iter_max-1:
-                print("iter", i)
-                plot(self, i, x_center=x_center, c_best=c_best, dist=dist, theta=theta)
+                #print("iter", i)
+                plot(self, i, self.iter_max, self.plotting_path, x_center=x_center, c_best=c_best, dist=dist, theta=theta)
             
             i+=1
 
         self.path = self.ExtractPath(x_best)
-        plot(self, 1, x_center=x_center, c_best=c_best, dist=dist, theta=theta)
+        plot(self, i, self.iter_max, self.plotting_path, x_center=x_center, c_best=c_best, dist=dist, theta=theta)
         plt.plot([x for x, _ in self.path], [y for _, y in self.path], color=(1.0,0.0,0.0,1))
+        plt.savefig(f'{self.plotting_path}/img_{i}1')
         plt.pause(0.001)
         plt.show()
+        animate(self, self.iter_max, self.plotting_path)
 
 
     def Near(self, V, x_new, search_radius = 20):
@@ -84,7 +88,7 @@ class Informed_RRT_Star(RRT_Star):
         self.step_len = r
         r2 = r**2
         dist_table = [(n.x - x_new.x) ** 2 + (n.y - x_new.y) ** 2 for n in V]
-        X_near = [v for v in V if dist_table[V.index(v)] <= r2 and not self.env.is_collision(v, x_new)]
+        X_near = [v for v in V if dist_table[V.index(v)] <= r2 and not self.env.isCollision(v, x_new)]
         
         return X_near
 
