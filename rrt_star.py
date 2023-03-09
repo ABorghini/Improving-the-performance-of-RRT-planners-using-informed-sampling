@@ -6,14 +6,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from env import Node, Env
-from utils import plot
+from utils import plot, animate
 
 
 class RRT_Star:
     def __init__(self, env, x_start, x_goal, step_len,
-                 goal_sample_rate, search_radius, iter_max, r_RRT, stop_at):
+                 goal_sample_rate, search_radius, iter_max, r_RRT, r_goal, stop_at, rnd):
 
-        self.name = 'RRT*'
+        self.name = 'RRT_star'
         self.x_start = Node(x_start)
         self.x_goal = Node(x_goal)
         self.step_len = step_len
@@ -21,8 +21,10 @@ class RRT_Star:
         self.search_radius = search_radius
         self.iter_max = iter_max
         self.r_RRT = r_RRT
+        self.r_goal = r_goal
         self.env = env
         self.stop_at = stop_at
+
         self.fig, self.ax = plt.subplots()
         self.delta = self.env.delta
         self.x_range = self.env.x_range
@@ -33,6 +35,10 @@ class RRT_Star:
         self.V = [self.x_start]
         # self.X_soln = set()
         self.path = None
+        if rnd:
+            self.plotting_path = f'{self.name}_imgs_max_{self.iter_max}_randEnv'
+        else:
+            self.plotting_path = f'{self.name}_imgs_max_{self.iter_max}_fixedEnv'
 
 
     def init(self):
@@ -48,7 +54,7 @@ class RRT_Star:
     def planning(self):
         theta, dist, x_center, C, x_best = self.init()
         c_best = np.inf
-   
+        first_enter = 0
         x_best = self.x_start
         i = 0
         while i<self.iter_max and c_best >= self.stop_at:
@@ -57,29 +63,31 @@ class RRT_Star:
             x_nearest = self.Nearest(x_rand)
             x_new = self.Steer(x_nearest, x_rand)
 
-            if not self.env.is_collision(x_nearest, x_new):
+            if not self.env.isCollision(x_nearest, x_new):
                 X_near = self.Near(self.V, x_new, self.r_RRT) # r_RRT
                 c_min = self.Cost(x_nearest, x_new)
 
                 # choose parent
-                x_new, _ = self.choose_parent(X_near, x_new, c_min)
+                x_new, _ = self.ChooseParent(X_near, x_new, c_min)
 
                 self.V.append(x_new)
 
-                # rewire
-                self.rewire(X_near, x_new)
+                # Rewire
+                self.Rewire(X_near, x_new)
 
                 x = self.V[self.V.index(x_new)]
                 
-                if x.equals(self.x_goal):
-                    print('entrato')
+                if x.equals(self.x_goal): #forse da eliminare
+                    if first_enter==0:
+                        print('entrato alla iterazione', i)
+                        first_enter+=1
                     x_best = x
                     c_best = self.Cost(x)
 
             # print("iter",i)
             if i % 20 == 0 or i == self.iter_max-1:
                 # print("iter", i)
-                plot(self, i)
+                plot(self, i, self.iter_max, self.plotting_path)
             i+=1
 
         print("c_best", c_best)
@@ -87,10 +95,12 @@ class RRT_Star:
         print("c_best", c_best)
         self.path = self.ExtractPath(x_best)
         # print("path", self.path)
-        plot(self, 1)
+        plot(self, i, self.iter_max, self.plotting_path)
         plt.plot([x for x, _ in self.path], [y for _, y in self.path], color=(1.0,0.0,0.0,1.0))
+        plt.savefig(f'{self.plotting_path}/img_{i}1')
         plt.pause(0.001)
         plt.show()
+        animate(self, self.iter_max, self.plotting_path)
 
     #initializes a new node in the direction of x_goal, distant at most step_len
     #from x_start
@@ -116,7 +126,7 @@ class RRT_Star:
         #     self.step_len = r
         r2 = r**2
         dist_table = [(n.x - x_new.x) ** 2 + (n.y - x_new.y) ** 2 for n in V]
-        X_near = [v for v in V if dist_table[V.index(v)] <= r2 and not self.env.is_collision(v, x_new)]
+        X_near = [v for v in V if dist_table[V.index(v)] <= r2 and not self.env.isCollision(v, x_new)]
         
         return X_near
 
@@ -128,15 +138,15 @@ class RRT_Star:
         else:
             return False
 
-    def choose_parent(self, X_near, x_new, c_min):
+    def ChooseParent(self, X_near, x_new, c_min):
         for x_near in X_near:
             c_new = self.Cost(x_near, x_new)
-            if c_new < c_min and not self.env.is_collision(x_near, x_new):
+            if c_new < c_min and not self.env.isCollision(x_near, x_new):
                 x_new.parent = x_near
                 c_min = c_new
         return x_new, c_min
 
-    def rewire(self, X_near, x_new):
+    def Rewire(self, X_near, x_new):
         for x_near in X_near:
             c_near = self.Cost(x_near)
             c_new = self.Cost(x_new, x_near)
