@@ -9,9 +9,29 @@ import math
 from scipy.spatial.transform import Rotation as Rot
 from sympy.abc import x
 from sympy import *
+import matplotlib.animation as animation
+from IPython.display import HTML
+from PIL import Image
 
+def create_dir(path):
+    if not os.path.exists(path):
+        os.mkdir(path)
 
-def plot(algo, iteration, x_center=None, c_best=np.inf, dist=None, theta=None):
+def animate(algo, iter_max, plotting_path):
+    img_list= []
+    ims = []
+    imgs = os.listdir(plotting_path)
+    fig = plt.figure(figsize=(8,8))
+    plt.axis("off")
+    for i in imgs:
+        img = Image.open(f'{plotting_path}/{i}')
+        img_list.append(img)
+    ims = [[plt.imshow(i, animated=True)] for i in img_list] #np.transpose(i,(1,2,0))
+    ani = animation.ArtistAnimation(fig, ims, blit=True)
+
+    ani.save(f'{plotting_path}/{algo.name}_{iter_max}.gif')
+
+def plot(algo, iteration, iter_max, plotting_path, x_center=None, c_best=np.inf, dist=None, theta=None):
 
     plt.cla()
 
@@ -24,6 +44,15 @@ def plot(algo, iteration, x_center=None, c_best=np.inf, dist=None, theta=None):
 
     if c_best != np.inf:
         draw_ellipse(x_center, c_best, dist, theta)
+
+    dimension = len(str(iter_max))
+    zero_to_add = dimension - len(str(iteration))
+    added_zeros = '0'*zero_to_add
+
+    #check if the directory exists, else create it
+    create_dir(plotting_path)
+
+    plt.savefig(f'{plotting_path}/img_{added_zeros}{iteration}')
 
     plt.pause(0.01)
 
