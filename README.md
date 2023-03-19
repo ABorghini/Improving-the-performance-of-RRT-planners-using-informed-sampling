@@ -25,19 +25,6 @@ The following command will run the code using the default values, so it will sta
 python main.py
 ```
 
-##############**!! Exception !!**##############
-
-To run the kinodynamic algorithms (for now) instead, use the following commands:
-```
-python rrtkino_w_main.py # for kinodynamic rrt*
-```
-or
-```
-python informed_rrt_kino_w_main.py #for informed kinodynamic rrt*
-```
-
-###############################################
-
 In order to run different configurations the following arguments must be added:
 ```
 -i # it will run the informed version of the rrt* algorithm
@@ -51,3 +38,17 @@ An example of a terminal command to run informed rrt* in a random environment wi
 ```
 python main.py -i -r -o 80 -c 28
 ```
+
+##############**!! Exception !!**##############
+
+To run the kinodynamic algorithms (for now) instead, use the following commands (no arguments allowed):
+```
+python rrtkino_w_main.py # for kinodynamic rrt*
+```
+or
+```
+python informed_rrt_kino_w_main.py #for informed kinodynamic rrt*
+```
+
+###############################################
+
