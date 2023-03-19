@@ -61,7 +61,7 @@ It will specify the minimum value of the cost of the best path the user want to 
 After different simulations we found out suitable values to choose for this argument. (Differences are mainly due to the environment)
 * geometric version: select a number between 25 and 30
 * kinodynamic version: select a number between 90 and 100
-* 
+
 ### Examples
 An example of a terminal command to run informed rrt* in a random environment with 80 obstacles and a goal cost of 28 is given below:
 ```
