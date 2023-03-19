@@ -31,3 +31,8 @@ class NodeKino():
         self.near_goal = False
         self.parent = None
         self.children = []
+
+    def equals(self, __o: object) -> bool:
+        if self.node == __o.node:
+            return True
+        return False
