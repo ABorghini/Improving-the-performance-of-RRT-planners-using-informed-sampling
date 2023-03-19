@@ -14,7 +14,7 @@ class Node:
         return False
 
 class Env:
-    def __init__(self, x_start, x_goal, w = 50, h = 30, thickness = 1, delta = 0.5):
+    def __init__(self, x_start, x_goal, w = 20, h = 20, thickness = 0.1, delta = 0.5):
         self.x_range = (0, w)
         self.y_range = (0, h)
         self.x_start = x_start
@@ -101,7 +101,7 @@ class Env:
         return False
 
     def is_inside_obs(self, node):
-        delta = 0.5
+        delta = 0.6
 
         for (x, y, w, h) in self.obs_rectangle:
             if 0 <= node.x - (x - delta) <= w + 2 * delta \
