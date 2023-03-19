@@ -32,7 +32,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         self,
         env=None,
         x_start=[2, 2, 0, 0],
-        x_goal=[50, 65, 0, 0],
+        x_goal=[98, 98, 0, 0],
         max_radius=100, #25, #init 100
         iter_max=50,
         state_dims=4,
@@ -725,54 +725,3 @@ def create_env(env, rnd, n_obs=0):
 
         for rect in obs_rectangle:
             env.add_rectangle(rect[0], rect[1], rect[2], rect[3])
-
-
-def main():
-    # A = zeros(4,4)
-    # B = eye(4)
-    # A[0,2] = 1.0
-    # A[1,3] = 1.0
-    # a = A*B*x
-    # print(a.integrate((x,0,3)))
-    x_start = [2, 2, 0, 0]
-    x_goal = [98, 98, 0, 0]
-    env = EnvKino(x_start=x_start, x_goal=x_goal, delta=0.5)
-    create_env(env, rnd=False)
-    print("env", type(env))
-    rrtkino = Informed_RRT_Star_Kino(env=env)
-    # plot_grid(rrtkino.name, rrtkino)
-    # plt.show()
-    # print(rrtkino.aux(rrtkino.x_start.node,rrtkino.x_goal.node))
-    rrtkino.planning()
-
-    # t = Symbol('t')
-    # t_s = Symbol('t_s')
-
-    # f = rrtkino.tau_star(0, t_s)
-    # print(f)
-    # print(solve(f, t_s))
-    # t = Symbol('t')
-    # p1 = S.One
-    # it = 0
-
-    # while it < 20 and len(p1.args) <= 1:
-    #     p1 = simplify(rrtkino.tau_star(0, 3) * t**it)
-    #     print(Matrix(p1.as_coeff_mul(t)[0]))
-    #     m = Matrix(p1.as_coeff_mul(t)[0])
-
-    #     p1 = p1.as_coeff_mul()[0]
-    #     it += 1
-    #     break
-
-    # print(m.T)
-    # A = zeros(4,4)
-    # A[1,2] = 1
-    # A[3,2] = 2
-    # A[0,2] = 1
-    # A = simplify(A*t)
-    # print(A)
-    # print(A.as_coeff_mul(t))
-
-
-if __name__ == "__main__":
-    main()
