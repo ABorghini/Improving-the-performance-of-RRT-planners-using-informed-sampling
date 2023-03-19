@@ -1,8 +1,10 @@
 # Improving-the-performance-of-RRT-planners-using-informed-sampling
 
 ## Update
-The informed version of the kinodynamic RRT* has been uploaded. 
+The informed version of the kinodynamic RRT* has been uploaded.
+
 All the files were updated to a better plotting.
+
 The implementation of the Kinodynamic RRT* has been improved, now it is faster.
 
 ## Work in progress
