@@ -8,6 +8,7 @@ from rrt_star import RRT_Star
 import random
 from env import Node, Env
 from utils import plot, animate
+import time as timing
 
 
 class Informed_RRT_Star(RRT_Star):
@@ -20,10 +21,16 @@ class Informed_RRT_Star(RRT_Star):
         self.name = 'IRRT_star'
         self.X_soln = set()
 
-        if rnd:
-            self.plotting_path = f'{self.name}_imgs_max_{self.iter_max}_randEnv'
-        else:
-            self.plotting_path = f'{self.name}_imgs_max_{self.iter_max}_fixedEnv'
+        if self.stop_at!=0:
+            self.iter_max = 10000
+
+        rnd_path = 'randEnv' if rnd else 'fixedEnv'
+        c_path = f'_C_{self.stop_at}_' if self.stop_at!=0 else ''
+        n_path = f'_N_{self.iter_max}_' if self.stop_at==0 else ''
+
+        self.plotting_path = f'{self.name}{n_path}{c_path}{rnd_path}'
+
+        self.duration = 0 #to add for the graphic analysis without the plots
 
 
     def planning(self):
@@ -32,12 +39,13 @@ class Informed_RRT_Star(RRT_Star):
    
         x_best = self.x_start
         i = 0
-        while i<self.iter_max and c_best >= self.stop_at:
+        #ts = timing.time()
+        while i<self.iter_max and c_best > self.stop_at:
             if self.X_soln:
                 cost = {node: self.Cost(node, self.x_goal) for node in self.X_soln}
                 x_best = min(cost, key=cost.get)
                 c_best = cost[x_best]
-                print("c_best", c_best)
+                #print("c_best", c_best)
                 if c_best == self.stop_at:
                     break
 
@@ -66,17 +74,20 @@ class Informed_RRT_Star(RRT_Star):
             # print("iter",i)
             if i % 20 == 0 or i == self.iter_max-1:
                 #print("iter", i)
-                plot(self, i, self.iter_max, self.plotting_path, x_center=x_center, c_best=c_best, dist=dist, theta=theta)
+                plot(self, i, x_center=x_center, c_best=c_best, dist=dist, theta=theta)
             
             i+=1
 
+            #td = timing.time()
+            #self.duration = td - ts
+
         self.path = self.ExtractPath(x_best)
-        plot(self, i, self.iter_max, self.plotting_path, x_center=x_center, c_best=c_best, dist=dist, theta=theta)
+        plot(self, i, x_center=x_center, c_best=c_best, dist=dist, theta=theta)
         plt.plot([x for x, _ in self.path], [y for _, y in self.path], color=(1.0,0.0,0.0,1))
         plt.savefig(f'{self.plotting_path}/img_{i}1')
         plt.pause(0.001)
         plt.show()
-        animate(self, self.iter_max, self.plotting_path)
+        animate(self)
 
 
     def Near(self, V, x_new, search_radius = 20):
