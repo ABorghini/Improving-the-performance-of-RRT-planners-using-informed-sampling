@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 from env import Node, Env
 from utils import plot, animate
+import time as timing
 
 
 class RRT_Star:
@@ -25,6 +26,9 @@ class RRT_Star:
         self.env = env
         self.stop_at = stop_at
 
+        if self.stop_at!=0:
+            self.iter_max = 10000
+
         self.fig, self.ax = plt.subplots()
         self.delta = self.env.delta
         self.x_range = self.env.x_range
@@ -35,10 +39,13 @@ class RRT_Star:
         self.V = [self.x_start]
         # self.X_soln = set()
         self.path = None
-        if rnd:
-            self.plotting_path = f'{self.name}_imgs_max_{self.iter_max}_randEnv'
-        else:
-            self.plotting_path = f'{self.name}_imgs_max_{self.iter_max}_fixedEnv'
+        rnd_path = 'randEnv' if rnd else 'fixedEnv'
+        c_path = f'_C_{self.stop_at}_' if self.stop_at!=0 else ''
+        n_path = f'_N_{self.iter_max}_' if self.stop_at==0 else ''
+
+        self.plotting_path = f'{self.name}{n_path}{c_path}{rnd_path}'
+
+        self.duration = 0 #to add for the graphic analysis without the plots
 
 
     def init(self):
@@ -57,7 +64,8 @@ class RRT_Star:
         first_enter = 0
         x_best = self.x_start
         i = 0
-        while i<self.iter_max and c_best >= self.stop_at:
+        #ts = timing.time()
+        while i<self.iter_max and c_best > self.stop_at:
 
             x_rand = self.SampleFromSpace()
             x_nearest = self.Nearest(x_rand)
@@ -87,20 +95,23 @@ class RRT_Star:
             # print("iter",i)
             if i % 20 == 0 or i == self.iter_max-1:
                 # print("iter", i)
-                plot(self, i, self.iter_max, self.plotting_path)
+                plot(self, i, c_best=c_best)
             i+=1
 
-        print("c_best", c_best)
+            #td = timing.time()
+            #self.duration = td - ts
+
+        #print("c_best", c_best)
         x_best, c_best = self.search_best()
-        print("c_best", c_best)
+        #print("c_best", c_best)
         self.path = self.ExtractPath(x_best)
         # print("path", self.path)
-        plot(self, i, self.iter_max, self.plotting_path)
+        plot(self, i, c_best=c_best)
         plt.plot([x for x, _ in self.path], [y for _, y in self.path], color=(1.0,0.0,0.0,1.0))
         plt.savefig(f'{self.plotting_path}/img_{i}1')
         plt.pause(0.001)
         plt.show()
-        animate(self, self.iter_max, self.plotting_path)
+        animate(self)
 
     #initializes a new node in the direction of x_goal, distant at most step_len
     #from x_start
