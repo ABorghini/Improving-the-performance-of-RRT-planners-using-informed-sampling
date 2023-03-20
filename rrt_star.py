@@ -92,20 +92,13 @@ class RRT_Star:
                     x_best = x
                     c_best = self.Cost(x)
 
-            # print("iter",i)
             if i % 20 == 0 or i == self.iter_max-1:
-                # print("iter", i)
                 plot(self, i, c_best=c_best)
             i+=1
 
-            #td = timing.time()
-            #self.duration = td - ts
 
-        #print("c_best", c_best)
         x_best, c_best = self.search_best()
-        #print("c_best", c_best)
         self.path = self.ExtractPath(x_best)
-        # print("path", self.path)
         plot(self, i, c_best=c_best)
         plt.plot([x for x, _ in self.path], [y for _, y in self.path], color=(1.0,0.0,0.0,1.0))
         plt.savefig(f'{self.plotting_path}/img_{i}1')
@@ -117,7 +110,6 @@ class RRT_Star:
     #from x_start
     def Steer(self, x_start, x_goal):
         dist, theta = self.get_distance_and_angle(x_start, x_goal)
-        # print("dist", self.step_len, dist)
         dist = min(self.step_len, dist)
 
         node_new = Node((x_start.x + dist * math.cos(theta),
@@ -132,9 +124,6 @@ class RRT_Star:
     def Near(self, V, x_new, search_radius = 20):
         n = len(V) + 1
         r = min((search_radius * math.sqrt((math.log(n) / n))), self.step_len)
-        #print("r2",r2)
-        # if self.name == 'IRRT*':
-        #     self.step_len = r
         r2 = r**2
         dist_table = [(n.x - x_new.x) ** 2 + (n.y - x_new.y) ** 2 for n in V]
         X_near = [v for v in V if dist_table[V.index(v)] <= r2 and not self.env.isCollision(v, x_new)]
@@ -167,7 +156,6 @@ class RRT_Star:
 
     def search_best(self):
         distances = [(n.x - self.x_goal.x) ** 2 + (n.y - self.x_goal.y) ** 2 for n in self.V]
-        # print("dist", distances)
         r2 = self.step_len**2
         indeces = [i for i in range(len(distances)) if distances[i] <= r2]
         
@@ -196,7 +184,6 @@ class RRT_Star:
         path = [[self.x_goal.x, self.x_goal.y]]
 
         while node.parent:
-            # print(node.parent.x,node.parent.y)
             path.append([node.x, node.y])
             node = node.parent
 

@@ -39,13 +39,11 @@ class Informed_RRT_Star(RRT_Star):
    
         x_best = self.x_start
         i = 0
-        #ts = timing.time()
         while i<self.iter_max and c_best > self.stop_at:
             if self.X_soln:
                 cost = {node: self.Cost(node, self.x_goal) for node in self.X_soln}
                 x_best = min(cost, key=cost.get)
                 c_best = cost[x_best]
-                #print("c_best", c_best)
                 if c_best == self.stop_at:
                     break
 
@@ -71,15 +69,11 @@ class Informed_RRT_Star(RRT_Star):
                     if not self.env.isCollision(x_new, self.x_goal):
                         self.X_soln.add(x_new)
 
-            # print("iter",i)
             if i % 20 == 0 or i == self.iter_max-1:
-                #print("iter", i)
                 plot(self, i, x_center=x_center, c_best=c_best, dist=dist, theta=theta)
             
             i+=1
 
-            #td = timing.time()
-            #self.duration = td - ts
 
         self.path = self.ExtractPath(x_best)
         plot(self, i, x_center=x_center, c_best=c_best, dist=dist, theta=theta)
@@ -94,8 +88,6 @@ class Informed_RRT_Star(RRT_Star):
         n = len(V) + 1
         # r2 = (search_radius * math.sqrt((math.log(n) / n))) ** 2
         r = min((search_radius * math.sqrt((math.log(n) / n))), self.step_len)
-        # DA RIVEDERE STA COSA DEL RAGGIO PD
-        #print("r2",r2)
         self.step_len = r
         r2 = r**2
         dist_table = [(n.x - x_new.x) ** 2 + (n.y - x_new.y) ** 2 for n in V]
@@ -106,8 +98,6 @@ class Informed_RRT_Star(RRT_Star):
     def Sample(self, c_max, c_min, x_center, C):
 
         if c_max < np.inf: #at least a solution has been found
-            
-            # print(c_min, c_max)
 
             #radii of the ellipsoid
             r = [c_max / 2.0,
