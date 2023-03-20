@@ -220,7 +220,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         # print(states, inputs)
 
         i = 0
-        while i < self.iter_max:  # and self.c_best >= self.stop_at
+        while i < self.iter_max and self.c_best > self.stop_at:
             print(f"Iteration {i} #######################################")
             print(len(self.V))
             i += 1
