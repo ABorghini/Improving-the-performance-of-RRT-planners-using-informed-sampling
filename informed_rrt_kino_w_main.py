@@ -603,30 +603,26 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         return x_next
 
     def prior(self, x):
-        # x[0] = mu, x[1]=sigma (new or current)
-        # returns 1 for all valid values of sigma. Log(1) =0, so it does not affect the summation.
-        # returns 0 for all invalid values of sigma (<=0). Log(0)=-infinity, and Log(negative number) is undefined.
-        # It makes the new sigma infinitely unlikely.
-        if x[1] <= 0:
-            return 0
-        return 1
+        # returns 1 for all valid values of the sample. Log(1) =0, so it does not affect the summation.
+        # returns 0 for all invalid values of the sample (<=0). Log(0)=-infinity, and Log(negative number) is undefined.
+        # It makes the new sample infinitely unlikely.
 
-    # Computes the likelihood of the data given a sigma (new or current) according to equation (2)
+        if self.state_limits[0][0] < x[0] < self.state_limits[0][1] and \
+            self.state_limits[1][0] < x[1] < self.state_limits[1][1] and \
+             self.state_limits[2][0] < x[2] < self.state_limits[2][1] and \
+              self.state_limits[3][0] < x[3] < self.state_limits[3][1]:
+            return 1
+        return 0
+
+    # Computes the likelihood of the data given a sample (new or current) w.r.t. the pdf of X_inf
     def manual_log_like_normal(self, x, data):
-        # x[0]=mu, x[1]=sigma (new or current)
         # data = the observation
-        # return np.sum(-np.log(x[1] * np.sqrt(2* np.pi) )-((data-x[0])**2) / (2*x[1]**2))
         mean_data = np.mean(data, axis=0) # mean on the columns
         cov = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]] #base value
         return multivariate_normal.pdf(
             np.array(x).flatten(), mean=mean_data.flatten(), cov=cov
         )
-
-    # Same as manual_log_like_normal(x,data), but using scipy implementation. It's pretty slow.
-    # def log_lik_normal(self, x,data):
-    #     #x[0]=mu, x[1]=sigma (new or current)
-    #     #data = the observation
-    #     return np.sum(np.log(norm(x[0],x[1]).pdf(data)))
+        
 
     # Defines whether to accept or reject the new sample
     def acceptance(self, x, x_new):
@@ -640,12 +636,8 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
 
 
     def Metropolis_Hastings(self, start, data):
-        # likelihood_computer(x,data): returns the likelihood that these parameters generated the data
-        # transition_model(x): a function that draws a sample from a symmetric distribution and returns it
-        # param_init: a starting sample
-        # iterations: number of accepted to generated
+        # start: a starting sample
         # data: the data that we wish to model
-        # acceptance_rule(x,x_new): decides whether to accept or reject the new sample
         x = start
 
         # for i in range(iterations):
@@ -660,46 +652,6 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
             return x_new
 
         return x
-
-    # def pgauss(self,
-    #             x,
-    #             x_,
-    #             cov=[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]):
-
-    #     # print(x)
-    #     # print(np.array(x).flatten())
-
-    #     var = multivariate_normal.pdf(np.array(x).flatten(), mean=np.array(x_).flatten(), cov=cov)
-    #     print(var)
-    #     return var
-    #     # return torch.normal(torch.Tensor(x), std=cov)
-
-    # def Metropolis_Hastings(self, x, iter=100):
-    #     samples = np.zeros((iter, x.shape[0]))
-    #     x = x.T
-
-    #     # for i in range(iter):
-    #     r = np.random.normal(size=x.shape)
-    #     print(r)
-    #     x_prime = np.array(x) + r
-
-    #     beta_old = np.random.multivariate_normal(mean=np.array(x).flatten(), cov=[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
-    #     # alpha =  self.pgauss(x, x_prime) / self.pgauss(self.pgauss(x, x_prime), x)
-    #     # print("alpha", alpha)
-
-    #     beta_new = np.random.multivariate_normal(mean=beta_old, cov= [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]) # either simulate a multiv normal with mean = beta or sum beta_old with mean zero
-
-    #     alpha = self.acceptance_probability(beta_new, beta_old, )
-    #     if np.random.rand() < alpha:
-    #         print("entrato")
-    #         return x_prime[0]
-
-    #     print("not in if")
-    #     # print(x_prime[0])
-    #     # print(np.array(x).flatten())
-    #     # print(type(np.array(x).flatten()))
-    #     return np.array(x).flatten()
-
 
 def create_env(env, rnd, n_obs=0):
     if rnd:
