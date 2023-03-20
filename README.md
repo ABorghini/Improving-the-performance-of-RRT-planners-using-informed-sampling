@@ -60,7 +60,7 @@ It will specify the minimum value of the cost of the best path the user want to 
 
 After different simulations we found out suitable values to choose for this argument. (Differences are mainly due to the environment)
 * euclidean version: select a number between 25 and 30
-* kinodynamic version: select a number between 90 and 110
+* kinodynamic version: select a number between 40 and 65 (default goal is [50, 65, 0, 0] to guarantee a faster solution; choose between 90 and 110 if the goal is set to [98, 98, 0, 0], for a complete search)
 
 ### Examples
 An example of a terminal command to run informed rrt* in a random environment with 80 obstacles and a goal cost of 28 is given below:
