@@ -51,7 +51,7 @@ It will specify the number of iterations of the algorithm (default is set to 50)
 
 Due to implementation differences between the kinodynamic and the geometric versions, the suiting number of iterations differs.
 * euclidean version: select a number between 500 and 5000
-* kinodynamic version: select a numbr between 50 and 500
+* kinodynamic version: select a number between 50 and 500
 ### Goal path cost `-c`
 ```
 python main.py -c <cost_of_the_best_path>
