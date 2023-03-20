@@ -62,6 +62,8 @@ class RRT_Star_Kino(RRT_Star):
         self.delta = self.env.delta
         self.obs_rectangle = self.env.obs_rectangle
         self.obs_boundary = self.env.obs_boundary
+        
+        self.stop_at = stop_at
 
         n_path = f'_N_{self.iter_max}'
         self.plotting_path = f'{self.name}{n_path}'
