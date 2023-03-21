@@ -53,8 +53,9 @@ class RRT_Star_Kino(RRT_Star):
         self.obs_rectangle = self.env.obs_rectangle
         self.obs_boundary = self.env.obs_boundary
 
-        n_path = f'_N_{self.iter_max}'
-        self.plotting_path = f'{self.name}{n_path}'
+        n_path = f'_N_{self.iter_max}' if self.stop_at==0 else ''
+        c_path = f'_C_{self.stop_at}' if self.stop_at!=0 else ''
+        self.plotting_path = f'{self.name}{n_path}{c_path}'
         self.sol = 0
 
 
