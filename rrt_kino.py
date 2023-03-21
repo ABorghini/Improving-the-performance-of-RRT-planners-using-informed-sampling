@@ -21,7 +21,6 @@ class RRT_Star_Kino(RRT_Star):
                  input_limits = [[-5, 5], [-5, 5]], stop_at = -np.inf):
 
         self.name = 'RRTK_star'
-        plt.ion()
         self.state_dims = state_dims
         self.input_dims = input_dims
         self.stop_at = stop_at
@@ -53,8 +52,9 @@ class RRT_Star_Kino(RRT_Star):
         self.obs_rectangle = self.env.obs_rectangle
         self.obs_boundary = self.env.obs_boundary
 
-        n_path = f'_N_{self.iter_max}' if self.stop_at==0 else ''
+        plt.ion()
         c_path = f'_C_{self.stop_at}' if self.stop_at!=0 else ''
+        n_path = f'_N_{self.iter_max}' if self.stop_at==0 else ''
         self.plotting_path = f'{self.name}{n_path}{c_path}'
         self.sol = 0
 
@@ -204,13 +204,19 @@ class RRT_Star_Kino(RRT_Star):
             i += 1
 
             x_rand = self.Sample()
+
+            # ChooseParent: given x_rand choose the best parent, i.e. best cost
             x_rand, min_node, min_cost, min_time  = self.ChooseParent(x_rand)
 
             if x_rand is None:
                 continue
 
+            # Rewire: x_rand becomes parent of the nodes such that
+            # the cost(x_start->x_rand->node) < cost(x_start->node)
             x_rand = self.Rewire(x_rand)       
 
+            # isBest: check whether the path cost from x_start->x_goal 
+            # passing through x_rand is better than the previous best path cost 
             x_rand =  self.isBest(x_rand, i)
             
             self.V.append(x_rand)
