@@ -52,8 +52,9 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         self.name = "IRRTK_star"
         self.p_best = [self.x_start.node, self.x_goal.node]  # initial best path
         plt.ion()
-        n_path = f'_N_{self.iter_max}'
-        self.plotting_path = f'{self.name}{n_path}'
+        c_path = f'_C_{self.stop_at}' if self.stop_at!=0 else ''
+        n_path = f'_N_{self.iter_max}' if self.stop_at==0 else ''
+        self.plotting_path = f'{self.name}{n_path}{c_path}'
         self.sol = 0
 
     def init(self):
