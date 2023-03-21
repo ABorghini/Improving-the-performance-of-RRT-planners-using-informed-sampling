@@ -16,9 +16,7 @@ SEED = 666
 random.seed(SEED)
 np.random.seed(SEED)
 
-# Possible goals
-# [50, 65, 0, 0]
-# [98, 98, 0, 0]
+# [50,65,0,0]
 
 from scipy.stats import norm, multivariate_normal, bernoulli
 
@@ -28,7 +26,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         self,
         env=None,
         x_start=[2, 2, 0, 0],
-        x_goal=[50, 65, 0, 0],
+        x_goal=[98, 98, 0, 0],
         max_radius=100, #25, #init 100
         iter_max=50,
         state_dims=4,
@@ -175,7 +173,6 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         )
 
         cost, time = self.eval_cost(self.x_start.node, self.x_goal.node, time=None)
-        cost = cost[0]
 
         self.x_start.cost = 0
         self.x_start.time = 0
@@ -226,7 +223,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         print("self.c_best", self.c_best)
         self.path = self.ExtractPath(self.x_best)
         print(self.path)
-        plot_kino(self, i, c_best=self.c_best[0], tau_star=self.t_best)
+        plot_kino(self, i, c_best=self.c_best, tau_star=self.t_best)
         plt.pause(2.01)
         animate(self)
 
@@ -246,7 +243,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
 
         cost = self.cost_tau(time, x, x0, x1)
 
-        return cost, time
+        return cost[0][0], time
 
     def eval_states_and_inputs(self, x0, x1, time=None):
 
@@ -337,8 +334,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         min_time = np.inf
         for node in self.V:
             cost, time = self.eval_cost(node.node, x_rand.node)
-            cost = cost[0]
-            
+           
             if (
                 cost < self.max_radius
                 and node.cost + cost < min_cost
@@ -353,6 +349,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
                     inputs, 0, time
                 ):
                     print("EUREKA")
+       
                     min_cost = cost + node.cost
                     min_time = time + node.time
                     min_node = node
@@ -363,6 +360,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         # self.V[self.V.index(min_node)].cost = min_cost
         # self.V[self.V.index(min_node)].time = min_time
         self.V[self.V.index(min_node)].children.append(x_rand)
+    
         x_rand.cost = min_cost
         x_rand.time = min_time
         x_rand.parent = self.V[self.V.index(min_node)]
@@ -400,7 +398,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
             )
             # te1 = timing.time()
             # print("eval cost while:", te1-ts1)
-            partial_cost = partial_cost[0]
+            # partial_cost = partial_cost[0]
             #print('Partial cost:', partial_cost)
             if partial_cost < self.max_radius:  # and self.isCollision()
 
@@ -432,12 +430,13 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
 
     def isBest(self, x_rand, i):
         cost, time = self.eval_cost(x_rand.node, self.x_goal.node)
-        cost = cost[0]
+
         if x_rand.cost + cost < self.c_best:
             states, inputs = self.eval_states_and_inputs(
                 x_rand.node, self.x_goal.node, time
             )
             if self.isStateFree(states, 0, time) and self.isInputFree(inputs, 0, time):
+         
                 self.c_best = x_rand.cost + cost
                 self.t_best = x_rand.time + time
                 self.x_goal.cost = self.c_best
@@ -459,7 +458,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
                 self.path = self.ExtractPath(self.x_best)
                 print(self.path)
                 #print('c_best format:', self.c_best)
-                plot_kino(self, i, c_best=self.c_best[0], tau_star=self.t_best)
+                plot_kino(self, i, c_best=self.c_best, tau_star=self.t_best)
 
         return x_rand
 
@@ -499,15 +498,11 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         #print(self.X_inf)
         while 1:
             x_0 = self.X_inf[np.random.randint(0, len(self.X_inf))]
-            while 1:
-                x_next = self.Metropolis_Hastings(x_0, self.X_inf)
-                x_next = NodeKino(x_next)
+            x_next = self.Metropolis_Hastings(x_0, self.X_inf)
+            x_next = NodeKino(x_next)
 
-                if np.array_equal(np.array(x_next.node), np.array(x_0)):
-                    continue
-                else:
-                    break
-
+            if np.array_equal(np.array(x_next.node), np.array(x_0)):
+                continue
             if self.in_informed(x_next):
                 break
             else:
