@@ -15,10 +15,6 @@ np.random.seed(SEED)
 
 # np.random.seed(0)
 
-# Possible goals
-# [50, 65, 0, 0]
-# [98, 98, 0, 0]
-
 class RRT_Star_Kino(RRT_Star):
     def __init__(self, env = None, x_start = [2,2,0,0], x_goal = [50,65,0,0], max_radius = 100,
                  iter_max = 50, state_dims = 4, input_dims = 2, state_limits = [[0, 100], [0, 100], [-10, 10], [-10, 10]],
@@ -179,7 +175,6 @@ class RRT_Star_Kino(RRT_Star):
         )
 
         cost, time = self.eval_cost(self.x_start.node, self.x_goal.node, time=None)
-        cost = cost[0]
 
         self.x_start.cost = 0
         self.x_start.time = 0
@@ -223,7 +218,7 @@ class RRT_Star_Kino(RRT_Star):
         print("self.c_best", self.c_best)
         self.path = self.ExtractPath(self.x_best)
         print(self.path)
-        plot_kino(self, i, c_best=self.c_best[0], tau_star=self.t_best)
+        plot_kino(self, i, c_best=self.c_best, tau_star=self.t_best)
         plt.pause(2.01)
         animate(self)
         
@@ -243,7 +238,7 @@ class RRT_Star_Kino(RRT_Star):
             time = self.eval_arrival_time(x0, x1)
     
         cost = self.cost_tau(time, x, x0, x1)
-        return cost, time
+        return cost[0][0], time
 
     def eval_states_and_inputs(self, x0, x1, time=None):
         if time==None:
@@ -319,7 +314,6 @@ class RRT_Star_Kino(RRT_Star):
 
         for node in self.V:
             cost, time = self.eval_cost(node.node, x_rand.node)
-            cost = cost[0]
 
             if cost < self.max_radius and node.cost+cost < min_cost and node.cost+cost < self.x_goal.cost:
 
@@ -367,7 +361,7 @@ class RRT_Star_Kino(RRT_Star):
             # costo start-x_i (c'è) + x_i-nodo (da calcolare)
             # x_i diventa padre di un nodo ottimizzando il costo del path
             partial_cost, partial_time = self.eval_cost(x_rand.node, node.node, time=None)
-            partial_cost = partial_cost[0]
+           
             if partial_cost < self.max_radius: # and self.isCollision()
 
                 new_cost = partial_cost + x_rand.cost
@@ -394,7 +388,7 @@ class RRT_Star_Kino(RRT_Star):
     
     def isBest(self, x_rand, i):
         cost, time = self.eval_cost(x_rand.node, self.x_goal.node)
-        cost = cost[0]
+
         if x_rand.cost+cost < self.c_best:
             states, inputs = self.eval_states_and_inputs(x_rand.node, self.x_goal.node, time)
             if self.isStateFree(states, 0, time) and self.isInputFree(inputs, 0, time):
@@ -413,7 +407,7 @@ class RRT_Star_Kino(RRT_Star):
                 print(self.path)
 
                 print('c_best format:', self.c_best)
-                plot_kino(self, i, c_best=self.c_best[0], tau_star=self.t_best)
+                plot_kino(self, i, c_best=self.c_best, tau_star=self.t_best)
         
         return x_rand
 
