@@ -167,13 +167,7 @@ def plot_kino(rrtk, iteration, x_center=None, c_best=np.inf, tau_star=np.inf, di
     t_print = "{:.2f}".format(tau_star)
 
     print("plot_grid")
-
-    if rrtk.stop_at == 0:
-        plot_grid(f"{rrtk.name}",f"it = {str(iteration)}/{str(rrtk.iter_max)}, nodes = {str(len(rrtk.V))}, c_best = {c_print}, tau_star = {t_print}", rrtk)
-    else:
-        plot_grid(f"{rrtk.name}",f"it = {str(iteration)}, goal_cost = {str(rrtk.stop_at)}, nodes = {str(len(rrtk.V))}, c_best = {c_print}, tau_star = {t_print}", rrtk)
-
-    
+    plot_grid(f"{rrtk.name}",f"it = {str(iteration)}/{str(rrtk.iter_max)}, nodes = {str(len(rrtk.V))}, c_best = {c_print}, tau_star = {t_print}", rrtk)
     states_list = []
     for idx, node in enumerate(path):
         print(idx)
@@ -185,7 +179,15 @@ def plot_kino(rrtk, iteration, x_center=None, c_best=np.inf, tau_star=np.inf, di
         
         states_list.extend([states(rrtk.t, t)[0:2] for t in times])
 
-    print(states_list)
+    # generated nodes
+    node_listx, node_listy, _, _ = zip(*[node.node for node in rrtk.V])
+    plt.plot(node_listx, node_listy, marker='o', color= 'plum', linestyle='', markersize=2)
+
+    # generated nodes after first solution
+    if len(rrtk.V) > rrtk.firstsol:
+        node_listx, node_listy, _, _ = zip(*[node.node for node in rrtk.V[rrtk.firstsol:]])
+        plt.plot(node_listx, node_listy, marker='o', color= 'lightskyblue', linestyle='', markersize=2)
+
     x, y = zip(*states_list)
     if len(path) > 2:
         x_, y_, _, _ = zip(*path[1:-1])
@@ -193,12 +195,8 @@ def plot_kino(rrtk, iteration, x_center=None, c_best=np.inf, tau_star=np.inf, di
         x_ = []
         y_ = []
 
-    #rrtk.ax.add_collection(x,y)
     plt.plot(x,y, color='c')
-    #plt.draw()
-    node_listx, node_listy, _, _ = zip(*[node.node for node in rrtk.V])
-    # print(rrtk.V)
-    plt.plot(node_listx, node_listy, marker='o', color= 'r', linestyle='', markersize=4)
+
     plt.plot(x_,y_, color='g', marker='o', linestyle='', markersize=4)
     plt.show()
     create_dir(rrtk.plotting_path)

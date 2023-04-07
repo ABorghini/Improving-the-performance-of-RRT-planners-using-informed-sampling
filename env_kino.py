@@ -6,8 +6,7 @@ class EnvKino(Env):
 
 
     def is_inside_obs(self, state):
-        delta = 0.5
-
+        delta = self.delta
         for (x, y, w, h) in self.obs_rectangle:
             if 0 <= state[0] - (x - delta) <= w + 2 * delta \
                     and 0 <= state[1] - (y - delta) <= h + 2 * delta:

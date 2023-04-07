@@ -101,7 +101,7 @@ class Env:
         return False
 
     def is_inside_obs(self, node):
-        delta = 0.6
+        delta = self.delta
 
         for (x, y, w, h) in self.obs_rectangle:
             if 0 <= node.x - (x - delta) <= w + 2 * delta \

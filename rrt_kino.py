@@ -8,12 +8,7 @@ import random
 from collections import deque
 from utils import animate, plot_kino
 import time as timing
-
-SEED = 666
-random.seed(SEED)
-np.random.seed(SEED)
-
-# np.random.seed(0)
+import matlab.engine
 
 class RRT_Star_Kino(RRT_Star):
     def __init__(self, env = None, x_start = [2,2,0,0], x_goal = [50,65,0,0], max_radius = 100,
@@ -57,9 +52,14 @@ class RRT_Star_Kino(RRT_Star):
         n_path = f'_N_{self.iter_max}' if self.stop_at==0 else ''
         self.plotting_path = f'{self.name}{n_path}{c_path}'
         self.sol = 0
+        self.firstsol = None
 
 
     def init(self):
+        self.eng = matlab.engine.start_matlab()
+        self.matlab = self.eng.eqs(self.state_dims, self.input_dims, self.state_limits, self.input_limits, self.max_radius, np.array(self.env.obs_rectangle, dtype=np.float64))
+
+        
         self.t = Symbol('t')
         self.ts = Symbol('ts')
         self.x = Symbol('x')
@@ -200,7 +200,7 @@ class RRT_Star_Kino(RRT_Star):
         i = 0
         while i<self.iter_max and self.c_best > self.stop_at:
             print(f"Iteration {i} #######################################")
-            print(len(self.V))
+            # print(len(self.V))
             i += 1
 
             x_rand = self.Sample()
@@ -211,6 +211,9 @@ class RRT_Star_Kino(RRT_Star):
             if x_rand is None:
                 continue
 
+            # Insert x_rand in the path tree        
+            self.V.append(x_rand)
+
             # Rewire: x_rand becomes parent of the nodes such that
             # the cost(x_start->x_rand->node) < cost(x_start->node)
             x_rand = self.Rewire(x_rand)       
@@ -219,23 +222,20 @@ class RRT_Star_Kino(RRT_Star):
             # passing through x_rand is better than the previous best path cost 
             x_rand =  self.isBest(x_rand, i)
             
-            self.V.append(x_rand)
-
-
+    
         print("self.c_best", self.c_best)
         self.path = self.ExtractPath(self.x_best)
-        print(self.path)
+        # print(self.path)
         plot_kino(self, i, c_best=self.c_best, tau_star=self.t_best)
         plt.pause(2.01)
         animate(self)
+        self.eng.quit()
         
 
     def eval_arrival_time(self, x0_, x1_):
         tau_star = Matrix(self.tau_star(x0_, x1_))
-
         p = Poly(tau_star[0]).all_coeffs()
         time_vec = np.roots(p)
-
         time = max([re(t) for t in time_vec if im(t)==0 and re(t)>=0])
         return 1/time
 
@@ -245,7 +245,7 @@ class RRT_Star_Kino(RRT_Star):
             time = self.eval_arrival_time(x0, x1)
     
         cost = self.cost_tau(time, x, x0, x1)
-        return cost[0][0], time
+        return float(cost[0][0]), float(time)
 
     def eval_states_and_inputs(self, x0, x1, time=None):
         if time==None:
@@ -258,7 +258,7 @@ class RRT_Star_Kino(RRT_Star):
 
 
     def isStateFree(self, states, t_init, t_goal):
-        step = 0.3
+        step = 0.1
 
         r = np.arange(t_init/step, t_goal/step)*step
 
@@ -314,83 +314,66 @@ class RRT_Star_Kino(RRT_Star):
         return node
 
     def ChooseParent(self, x_rand):
+        nodes, costs, times = zip(*[[np.array(node.node, dtype=np.float64), node.cost, node.time] for node in self.V])
 
-        min_node = None
-        min_cost = np.inf
-        min_time = np.inf
+        ret = self.eng.ChooseParent(self.matlab, np.array(nodes, dtype=np.float64), np.array(costs,dtype=np.float64), np.array(times,dtype=np.float64), np.array(x_rand.node,dtype=np.float64), self.x_goal.cost)
+        ret = ret[0]
 
-        for node in self.V:
-            cost, time = self.eval_cost(node.node, x_rand.node)
-
-            if cost < self.max_radius and node.cost+cost < min_cost and node.cost+cost < self.x_goal.cost:
-
-                states, inputs = self.eval_states_and_inputs(node.node, x_rand.node, time)
-
-                if self.isStateFree(states, 0, time) and self.isInputFree(inputs, 0, time):
-                    print("EUREKA")
-                    min_cost = cost+node.cost
-                    min_time = time+node.time
-                    min_node = node
-
+        min_cost, min_time, min_idx = ret[0], ret[1], int(ret[2])-1
  
-        if min_node is None:
+        if min_cost == float('inf'):
             return None, None, None, None
 
-        # self.V[self.V.index(min_node)].cost = min_cost
-        # self.V[self.V.index(min_node)].time = min_time
-        self.V[self.V.index(min_node)].children.append(x_rand)
+        self.V[min_idx].children.append(x_rand)
         x_rand.cost = min_cost
         x_rand.time = min_time
-        x_rand.parent = self.V[self.V.index(min_node)]
+        x_rand.parent = self.V[min_idx]
 
-        return x_rand, min_node, min_cost, min_time
+        return x_rand, self.V[min_idx], min_cost, min_time
+
 
     def Rewire(self, x_rand):
-        stack = deque()
-        stack.append((self.x_start,0,0)) #node, cost, time
+        nodes, costs, times, costs2goal, times2goal, nearsgoal, nodeschildren = zip(*[
+                                                                    [np.array(node.node, dtype=np.float64),
+                                                                     node.cost,
+                                                                     node.time,
+                                                                     node.cost2goal,
+                                                                     node.time2goal,
+                                                                     node.near_goal,
+                                                                     [np.array(child.node,dtype=np.float64) for child in node.children]] for node in self.V])
+                                              
+        ret = self.eng.Rewire(self.matlab,
+                        np.array(nodes,dtype=np.float64),
+                        np.array(costs,dtype=np.float64),
+                        np.array(times,dtype=np.float64),
+                        np.array(costs2goal,dtype=np.float64),
+                        np.array(times2goal,dtype=np.float64),
+                        np.array(nearsgoal,dtype=np.float64),
+                        nodeschildren,
+                        np.array(x_rand.node,dtype=np.float64),
+                        x_rand.cost,
+                        x_rand.time,
+                        self.x_goal.cost,
+                        self.c_best,
+                        self.t_best,
+                        self.V.index(self.x_best)+1
+                        )
 
-        while not len(stack)==0:
-            node, cost_imp, time_imp = stack.pop()
+        x_rand_children = [np.array(child,dtype=np.float64) for child in self.eng.getfield(self.matlab,"x_rand_children")]
 
-            node.cost -= cost_imp
-            node.time -= time_imp
-            if node.near_goal:
-                if node.cost + node.cost2goal < self.c_best:
-                    self.c_best = node.cost + node.cost2goal
-                    self.t_best = node.time + node.time2goal
-                    self.x_best = node
-                continue
-            
-            diff = cost_imp
-            time_diff = time_imp
-                
-            # per ogni nodo abbiamo il costo start-nodo
-            # costo start-x_i (c'è) + x_i-nodo (da calcolare)
-            # x_i diventa padre di un nodo ottimizzando il costo del path
-            partial_cost, partial_time = self.eval_cost(x_rand.node, node.node, time=None)
-           
-            if partial_cost < self.max_radius: # and self.isCollision()
-
-                new_cost = partial_cost + x_rand.cost
-
-                if new_cost < node.cost:
-                    states, inputs = self.eval_states_and_inputs(x_rand.node ,node.node , partial_time) 
-                    if self.isStateFree(states, 0, partial_time) and self.isInputFree(inputs, 0, partial_time):
-                        
-                        new_time = partial_time + x_rand.time
-                        diff = node.cost - new_cost
-                        time_diff = node.time - new_time
-
-                        self.V[self.V.index(node)].parent = x_rand
-                        self.V[self.V.index(node)].cost = new_cost
-                        x_rand.children.append(node)
-                        
-                        self.V[self.V.index(node)].time = new_time
-
-            
-            for child in node.children:
-                stack.append((child, diff, time_diff))
-            
+        self.c_best, self.t_best, self.x_best = ret['c_best'], ret['t_best'], self.V[int(ret['x_best'])-1]
+        
+        for child in x_rand_children:
+            child = child[0]
+            old_parent = np.array(child[3],dtype=np.int16)-1
+            idx = np.array(child[0],dtype=np.int16)-1
+            self.V[old_parent].children.remove(self.V[idx])
+            self.V[idx].cost = child[1]
+            self.V[idx].time = child[2]
+        
+            x_rand.children.append(self.V[idx])
+            self.V[idx].parent = self.V[-1]
+        
         return x_rand
     
     def isBest(self, x_rand, i):
@@ -403,17 +386,18 @@ class RRT_Star_Kino(RRT_Star):
                 self.t_best = x_rand.time + time
                 self.x_goal.cost = self.c_best
                 self.x_goal.time = self.t_best
+
                 x_rand.near_goal = True
                 x_rand.cost2goal = cost
-                # x_rand.time2goal = time
+                x_rand.time2goal = time
+
                 self.x_best = x_rand
                 print("TROVATA SOLUZIONE")
-
+                if self.firstsol == None:
+                    self.firstsol = len(self.V)
                 self.sol +=1
-                self.path = self.ExtractPath(self.x_best)
-                print(self.path)
 
-                print('c_best format:', self.c_best)
+                self.path = self.ExtractPath(self.x_best)
                 plot_kino(self, i, c_best=self.c_best, tau_star=self.t_best)
         
         return x_rand
@@ -429,27 +413,3 @@ class RRT_Star_Kino(RRT_Star):
         path.append(self.x_start.node)
 
         return path
-
-def create_env(env, rnd, n_obs = 0):
-    if rnd:
-        while len(env.obs_rectangle)!=n_obs:
-            rnd_x = random.random.uniform(env.x_range[0], env.x_range[1])
-            rnd_y = random.random.uniform(env.y_range[0], env.y_range[1])
-            rnd_w = random.random.uniform(0.5, 1.5)
-            rnd_h = random.random.uniform(0.5, 1.5)
-            
-        env.add_rectangle(rnd_x,rnd_y,rnd_w,rnd_h)
-
-        print("Environment done!")
-
-    else: #fixed environment
-        obs_rectangle = [
-                [60,0,10,20],
-                [60,30,10,70],
-                [30,0,10,70],
-                [30,80,10,20]
-            ]
-
-        for rect in obs_rectangle:
-            env.add_rectangle(rect[0], rect[1], rect[2], rect[3])
-

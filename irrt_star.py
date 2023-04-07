@@ -88,7 +88,7 @@ class Informed_RRT_Star(RRT_Star):
         n = len(V) + 1
         # r2 = (search_radius * math.sqrt((math.log(n) / n))) ** 2
         r = min((search_radius * math.sqrt((math.log(n) / n))), self.step_len)
-        self.step_len = r
+        # self.step_len = r
         r2 = r**2
         dist_table = [(n.x - x_new.x) ** 2 + (n.y - x_new.y) ** 2 for n in V]
         X_near = [v for v in V if dist_table[V.index(v)] <= r2 and not self.env.isCollision(v, x_new)]

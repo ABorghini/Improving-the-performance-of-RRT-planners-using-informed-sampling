@@ -84,7 +84,7 @@ class RRT_Star:
                 self.Rewire(X_near, x_new)
 
                 x = self.V[self.V.index(x_new)]
-                
+
                 if x.equals(self.x_goal): #forse da eliminare
                     if first_enter==0:
                         print('entrato alla iterazione', i)
@@ -124,10 +124,11 @@ class RRT_Star:
     def Near(self, V, x_new, search_radius = 20):
         n = len(V) + 1
         r = min((search_radius * math.sqrt((math.log(n) / n))), self.step_len)
+        # self.step_len = r
         r2 = r**2
         dist_table = [(n.x - x_new.x) ** 2 + (n.y - x_new.y) ** 2 for n in V]
         X_near = [v for v in V if dist_table[V.index(v)] <= r2 and not self.env.isCollision(v, x_new)]
-        
+
         return X_near
 
 
@@ -158,9 +159,9 @@ class RRT_Star:
         distances = [(n.x - self.x_goal.x) ** 2 + (n.y - self.x_goal.y) ** 2 for n in self.V]
         r2 = self.step_len**2
         indeces = [i for i in range(len(distances)) if distances[i] <= r2]
-        
+
         if len(indeces)==0:
-            return self.x_goal, np.inf 
+            return self.x_goal, np.inf
         cost, idxs = zip(*[[self.Cost(self.V[idx], self.x_goal), idx] for idx in indeces])
         c_i = np.argmin(np.array(cost))
         best_index = idxs[c_i]

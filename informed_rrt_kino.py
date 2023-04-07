@@ -1,22 +1,14 @@
-# from re import X
 
-# from Project.utils import plot_grid
 from rrt_kino import *
 import numpy as np
 from sympy import *
 from sympy.abc import x
 from env_kino import NodeKino
-import random #check if is used
 from collections import deque
 from utils import plot_kino, plot_grid
 import time as timing
 from scipy.stats import multivariate_normal
-
-SEED = 666
-random.seed(SEED)
-np.random.seed(SEED)
-
-# [50,65,0,0]
+import matlab.engine
 
 from scipy.stats import norm, multivariate_normal, bernoulli
 
@@ -58,6 +50,8 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         self.sol = 0
 
     def init(self):
+        self.eng = matlab.engine.start_matlab()
+        self.matlab = self.eng.eqs(self.state_dims, self.input_dims, self.state_limits, self.input_limits, self.max_radius, np.array(self.env.obs_rectangle, dtype=np.float64))
         self.t = Symbol("t")
         self.ts = Symbol("ts")
         self.x = Symbol("x")
@@ -95,7 +89,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
             * (Matrix(self.x1) - self.x_bar(self.tau, self.ts, self.x0)),
             "numpy",
         )
-
+ 
         # Tau*
         tau_star_ = (
             eye(1)
@@ -188,8 +182,8 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         self.V.append(self.x_start)
 
         # The tranistion model defines how to move from sigma_current to sigma_new
-        self.transition_model = lambda x: [
-            np.random.normal(x[i], 5, (1,))[0] for i in range(len(x)) #0.5
+        self.transition_model = lambda x,y: [
+            np.random.normal(x[i], y*5, (1,))[0] if i<2 else np.random.normal(x[i], 4, (1,))[0] for i in range(len(x)) #0.5
         ]
         self.X_inf = [
             self.x_start.node,
@@ -206,16 +200,19 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         i = 0
         while i < self.iter_max and self.c_best > self.stop_at:
             print(f"Iteration {i} #######################################")
-            print(len(self.V))
+            # print(len(self.V))
             i += 1
 
-            x_rand = self.Sample()
+            x_rand = self.Sample(i)
 
             # ChooseParent: given x_rand choose the best parent, i.e. best cost
             x_rand, min_node, min_cost, min_time = self.ChooseParent(x_rand)
 
             if x_rand is None:
                 continue
+
+            # Insert x_rand in the path tree
+            self.V.append(x_rand)
 
             # Rewire: x_rand becomes parent of the nodes such that
             # the cost(x_start->x_rand->node) < cost(x_start->node)
@@ -225,14 +222,14 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
             # passing through x_rand is better than the previous best path cost 
             x_rand = self.isBest(x_rand, i) #modified for the GIF
 
-            self.V.append(x_rand)
 
         print("self.c_best", self.c_best)
         self.path = self.ExtractPath(self.x_best)
-        print(self.path)
+        # print(self.path)
         plot_kino(self, i, c_best=self.c_best, tau_star=self.t_best)
         plt.pause(2.01)
         animate(self)
+        self.eng.quit()
 
     def eval_arrival_time(self, x0_, x1_):
         tau_star = Matrix(self.tau_star(x0_, x1_))
@@ -241,6 +238,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         time_vec = np.roots(p)
 
         time = max([re(t) for t in time_vec if im(t) == 0 and re(t) >= 0])
+        # print(1/time)
         return 1 / time
 
     def eval_cost(self, x0, x1, time=None):
@@ -250,7 +248,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
 
         cost = self.cost_tau(time, x, x0, x1)
 
-        return cost[0][0], time
+        return float(cost[0][0]), float(time)
 
     def eval_states_and_inputs(self, x0, x1, time=None):
 
@@ -302,7 +300,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
 
         return True
 
-    def Sample(self):
+    def Sample(self, it):
         delta = self.delta
 
         if self.c_best == np.inf:
@@ -330,111 +328,11 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
                 )
 
         else:
-            node = self.MCMC_Sampling()
+            node = self.MCMC_Sampling(it)
 
         return node
 
-    def ChooseParent(self, x_rand):
-        min_node = None
-
-        min_cost = np.inf
-        min_time = np.inf
-        for node in self.V:
-            cost, time = self.eval_cost(node.node, x_rand.node)
-           
-            if (
-                cost < self.max_radius
-                and node.cost + cost < min_cost
-                and node.cost + cost < self.x_goal.cost
-            ):
-
-                states, inputs = self.eval_states_and_inputs(
-                    node.node, x_rand.node, time
-                )
-              
-                if self.isStateFree(states, 0, time) and self.isInputFree(
-                    inputs, 0, time
-                ):
-                    print("EUREKA")
-       
-                    min_cost = cost + node.cost
-                    min_time = time + node.time
-                    min_node = node
-
-        if min_node is None:
-            return None, None, None, None
-
-        # self.V[self.V.index(min_node)].cost = min_cost
-        # self.V[self.V.index(min_node)].time = min_time
-        self.V[self.V.index(min_node)].children.append(x_rand)
     
-        x_rand.cost = min_cost
-        x_rand.time = min_time
-        x_rand.parent = self.V[self.V.index(min_node)]
-
-        return x_rand, min_node, min_cost, min_time
-
-    def Rewire(self, x_rand):
-        stack = deque()
-        stack.append((self.x_start, 0, 0))  # node, cost, time
-        # ts = timing.time()
-        while not len(stack) == 0:
-            # print("LEN STACK")
-            # print(len(stack))
-            # print("#"*200)
-            node, cost_imp, time_imp = stack.pop()
-
-            node.cost -= cost_imp
-            node.time -= time_imp
-            if node.near_goal:
-                if node.cost + node.cost2goal < self.c_best:
-                    self.c_best = node.cost + node.cost2goal
-                    self.t_best = node.time + node.time2goal
-                    self.x_best = node
-                continue
-
-            diff = cost_imp
-            time_diff = time_imp
-
-            # per ogni nodo abbiamo il costo start-nodo
-            # costo start-x_i (c'è) + x_i-nodo (da calcolare)
-            # x_i diventa padre di un nodo ottimizzando il costo del path
-            # ts1 = timing.time()
-            partial_cost, partial_time = self.eval_cost(
-                x_rand.node, node.node, time=None
-            )
-            # te1 = timing.time()
-            # print("eval cost while:", te1-ts1)
-            # partial_cost = partial_cost[0]
-            #print('Partial cost:', partial_cost)
-            if partial_cost < self.max_radius:  # and self.isCollision()
-
-                new_cost = partial_cost + x_rand.cost
-
-                if new_cost < node.cost:
-                    states, inputs = self.eval_states_and_inputs(
-                        x_rand.node, node.node, partial_time
-                    )
-                    if self.isStateFree(states, 0, partial_time) and self.isInputFree(
-                        inputs, 0, partial_time
-                    ):
-
-                        new_time = partial_time + x_rand.time
-                        diff = node.cost - new_cost
-                        time_diff = node.time - new_time
-
-                        self.V[self.V.index(node)].parent = x_rand
-                        self.V[self.V.index(node)].cost = new_cost
-                        x_rand.children.append(node)
-
-                        self.V[self.V.index(node)].time = new_time
-
-            for child in node.children:
-                stack.append((child, diff, time_diff))
-        # te = timing.time()
-        # print("stack time", te - ts)
-        return x_rand
-
     def isBest(self, x_rand, i):
         cost, time = self.eval_cost(x_rand.node, self.x_goal.node)
 
@@ -448,23 +346,21 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
                 self.t_best = x_rand.time + time
                 self.x_goal.cost = self.c_best
                 self.x_goal.time = self.t_best
+
                 x_rand.near_goal = True
                 x_rand.cost2goal = cost
-                # x_rand.time2goal = time
-                self.x_best = x_rand
-                print("#" * 200)
+                x_rand.time2goal = time
+                self.x_best = x_rand 
+
                 print("TROVATA SOLUZIONE")
+                if self.firstsol == None:
+                    self.firstsol = len(self.V)
                 self.sol +=1
-                print("#" * 200)
-                self.p_best = self.ExtractPath(self.x_best)
-                #print(self.X_inf)
-                self.X_inf.extend([element for element in self.p_best if element not in self.X_inf])
-                #print(self.X_inf)
-                #self.X_inf = list(set(self.p_best) | set(self.X_inf))
-                #self.X_inf = self.ExtractPath(self.x_best)
+
                 self.path = self.ExtractPath(self.x_best)
-                print(self.path)
-                #print('c_best format:', self.c_best)
+                self.X_inf.extend([element for element in self.path if element not in self.X_inf])
+                # self.path = self.ExtractPath(self.x_best)
+
                 plot_kino(self, i, c_best=self.c_best, tau_star=self.t_best)
 
         return x_rand
@@ -500,14 +396,13 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
 
         return True
 
-    def MCMC_Sampling(self):  # x_i, c_best
+    def MCMC_Sampling(self, it):  # x_i, c_best
         cont = True
-        #print(self.X_inf)
+
         while 1:
             x_0 = self.X_inf[np.random.randint(0, len(self.X_inf))]
-            x_next = self.Metropolis_Hastings(x_0, self.X_inf)
+            x_next = self.Metropolis_Hastings(x_0, self.X_inf, it) # [np.array(n.node) for n in self.V]
             x_next = NodeKino(x_next)
-
             if np.array_equal(np.array(x_next.node), np.array(x_0)):
                 continue
             if self.in_informed(x_next):
@@ -532,12 +427,13 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         return 0
 
 
-    # Computes the likelihood of the data given a sigma (new or current) according to equation (2)
+    # Computes the likelihood of the data given a sigma (new or current)
     def manual_log_like_normal(self, x, data):
         # data = the observation
         # return np.sum(-np.log(x[1] * np.sqrt(2* np.pi) )-((data-x[0])**2) / (2*x[1]**2))
         mean_data = np.mean(data, axis=0) # mean on the columns
-        cov = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]] #base value
+        
+        cov = [[200., 0., 0., 0.], [0., 200., 0., 0.], [0., 0., 9., 0.], [0., 0., 0., 9.]] #base value
         return np.log(multivariate_normal.pdf(
             np.array(x).flatten(), mean=mean_data.flatten(), cov=cov
         ))
@@ -553,17 +449,18 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
             # less likely x_new are less likely to be accepted
             return accept < (np.exp(x_new - x))
 
-    def Metropolis_Hastings(self, start, data):
+
+    def Metropolis_Hastings(self, start, data, it):
         x = start
 
-        x_new = self.transition_model(x)
+        r = max((15 * math.sqrt((math.log(it) / it))), 1)
+        x_new = self.transition_model(x, r)
         x_lik = self.manual_log_like_normal(x, data)
         x_new_lik = self.manual_log_like_normal(x_new, data)
+
         if self.acceptance(
             x_lik + np.log(self.prior(x)), x_new_lik + np.log(self.prior(x_new))
         ):
             return x_new
 
         return x
-
-    
