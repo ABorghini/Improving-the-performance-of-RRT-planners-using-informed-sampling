@@ -1,4 +1,5 @@
 # Improving-the-performance-of-RRT-planners-using-informed-sampling
+[![Python 3.10][python-shield]][python-url]
 
 ## Update
 The informed version of the kinodynamic RRT* has been uploaded.
@@ -71,3 +72,7 @@ Another example, it will run kinodynamic rrt* in a fixed environment with a maxi
 ```
 python main.py -k -it 350
 ```
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[python-shield]: https://img.shields.io/github/contributors/othneildrew/Best-README-Template.svg?style=for-the-badge
+[python-url]: https://www.python.org/downloads/release/python-3100/
