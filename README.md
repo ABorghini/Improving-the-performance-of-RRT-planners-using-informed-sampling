@@ -1,7 +1,7 @@
 # Improving-the-performance-of-RRT-planners-using-informed-sampling
+<!-- PROJECT SHIELDS -->
 [![Python][python-shield]][python-url]
-
-[![Matlab][matlab-shield]][matlab-url]
+[![Matlab][maltab-shield]][matlab-url]
 
 ## Update
 The informed version of the kinodynamic RRT* has been uploaded.
@@ -76,6 +76,7 @@ python main.py -k -it 350
 ```
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+
 [python-shield]: https://img.shields.io/badge/python-v3.10-brightgreen
 [python-url]: https://www.python.org/downloads/release/python-3100/
 [maltab-shield]: https://img.shields.io/badge/matlab-v2023a-brightgreen
