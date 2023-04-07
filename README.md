@@ -74,5 +74,5 @@ python main.py -k -it 350
 ```
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[python-shield]: https://img.shields.io/github/contributors/othneildrew/Best-README-Template.svg?style=for-the-badge
+[python-shield]: https://img.shields.io/badge/python-v3.10-brightgreen
 [python-url]: https://www.python.org/downloads/release/python-3100/
