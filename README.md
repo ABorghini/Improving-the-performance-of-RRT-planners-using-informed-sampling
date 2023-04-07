@@ -78,4 +78,4 @@ python main.py -k -it 350
 [python-shield]: https://img.shields.io/badge/python-v3.10-brightgreen
 [python-url]: https://www.python.org/downloads/release/python-3100/
 [maltab-shield]: https://img.shields.io/badge/matlab-v2023a-brightgreen
-[matlab-url]: https://it.mathworks.com/products/matlab.html
+[matlab-url]: https://it.mathworks.com/products/matlab
