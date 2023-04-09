@@ -4,11 +4,11 @@
 [![Matlab][maltab-shield]][matlab-url]
 
 ## Update
-The informed version of the kinodynamic RRT* has been uploaded.
+Control over the seeds from the user was added.
 
 All the files were updated to a better plotting.
 
-The implementation of the Kinodynamic RRT* has been improved, now it is faster.
+The implementation of the Kinodynamic RRT* has been improved through matlab engine, now it is faster.
 
 ## About
 In this implementation we present the rrt* algorithm in 4 different ways. The implementations are:
@@ -19,7 +19,7 @@ In this implementation we present the rrt* algorithm in 4 different ways. The im
 
 ## Simulations
 In this section we present the different commands useful to run the code.
-The following command will run the code using the default values, so it will start a simulation of RRT* with a fixed environment and a fixed number of iterations.
+The following command will run the code using the default values, so it will start a simulation of RRT* with a fixed environment, a fixed number of iterations and a set seed.
 ```
 python main.py
 ```
@@ -31,30 +31,37 @@ python main.py -i
 ```
 
 Adding this argument will run the informed version of the rrt* algorithm.
+
 ### Kinodynamic `-k`
 ```
 python main.py -k
 ```
 Adding this argument will run the kinodynamic version of the rrt* algorithm.
+
 ### Random `-r`
 ```
 python main.py -r 
 ```
 It makes the environment randomly generated.
+
+### Custom environment `-e`
+```
+python main.py -e
+```
+It selects the custom environment instead of the fixed one.
+
 ### Obstacles number `-o`
 ```
 python main.py -r -o <number_of_obstacles>
 ```
 It will specify the number of obstacles to generate if the environment is random. (the default value is set to 100)
+
 ### Iterations number `-it`
 ```
 python main.py -it <number_if_iterations>
 ``` 
-It will specify the number of iterations of the algorithm (default is set to 50).
+It will specify the number of iterations of the algorithm (default is set to 500).
 
-Due to implementation differences between the kinodynamic and the geometric versions, the suiting number of iterations differs.
-* euclidean version: select a number between 500 and 5000
-* kinodynamic version: select a numbr between 50 and 500
 ### Goal path cost `-c`
 ```
 python main.py -c <cost_of_the_best_path>
@@ -62,8 +69,23 @@ python main.py -c <cost_of_the_best_path>
 It will specify the minimum value of the cost of the best path the user want to achieve (if not specified the code will run until reaching the maximum number of iterations).
 
 After different simulations we found out suitable values to choose for this argument. (Differences are mainly due to the environment)
-* euclidean version: select a number between 25 and 30
-* kinodynamic version: select a number between 90 and 100
+* euclidean version, random environment: select a number between 11 and 20
+* euclidean version, fixed environment: select a number between 24 and 27
+* euclidean version, custom environment: select a number between 170 and 180
+* kinodynamic version, fixed environment: select a number between 90 and 100
+* kinodynamic version, custom environment: select a number between 170 and 180
+
+### Process seed `-s`
+```
+python main.py -s <seed_value>
+```
+It will specify the seed of the process, that controls the randomness in the generation of the next nodes, and so of the generated path.
+
+### Environment seed `-es`
+```
+python main.py -es <environment_seed_value>
+```
+It will specify the seed of the environment, that controls the random distribution of the obstacles. It has effect just in the random environment.
 
 ### Examples
 An example of a terminal command to run informed rrt* in a random environment with 80 obstacles and a goal cost of 28 is given below:
