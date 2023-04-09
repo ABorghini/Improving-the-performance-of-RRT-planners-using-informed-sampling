@@ -13,11 +13,11 @@ import time as timing
 
 class Informed_RRT_Star(RRT_Star):
     def __init__(self, env, x_start, x_goal, step_len,
-                 goal_sample_rate, search_radius, iter_max, r_RRT, r_goal, stop_at, rnd):
+                 goal_sample_rate, search_radius, iter_max, r_RRT, r_goal, stop_at, rnd, n_obs):
         
         super().__init__(env, x_start, x_goal, step_len,
                         goal_sample_rate, search_radius,
-                        iter_max, r_RRT, r_goal, stop_at,rnd)   
+                        iter_max, r_RRT, r_goal, stop_at,rnd,n_obs)   
         self.name = 'IRRT_star'
         self.X_soln = set()
 
@@ -27,8 +27,9 @@ class Informed_RRT_Star(RRT_Star):
         rnd_path = 'randEnv' if rnd else 'fixedEnv'
         c_path = f'_C_{self.stop_at}_' if self.stop_at!=0 else ''
         n_path = f'_N_{self.iter_max}_' if self.stop_at==0 else ''
+        obs_path = f'_O_{n_obs}' if rnd else ''
 
-        self.plotting_path = f'{self.name}{n_path}{c_path}{rnd_path}'
+        self.plotting_path = f'{self.name}{n_path}{c_path}{rnd_path}{obs_path}'
 
         self.duration = 0 #to add for the graphic analysis without the plots
 
@@ -127,6 +128,6 @@ class Informed_RRT_Star(RRT_Star):
     @staticmethod
     def SampleUnitBall():
         while True:
-            x, y = random.uniform(-1, 1), random.uniform(-1, 1)
+            x, y = np.random.uniform(-1, 1), np.random.uniform(-1, 1)
             if x ** 2 + y ** 2 < 1:
                 return np.array([[x], [y]])
