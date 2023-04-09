@@ -12,7 +12,7 @@ import time as timing
 
 class RRT_Star:
     def __init__(self, env, x_start, x_goal, step_len,
-                 goal_sample_rate, search_radius, iter_max, r_RRT, r_goal, stop_at, rnd):
+                 goal_sample_rate, search_radius, iter_max, r_RRT, r_goal, stop_at, rnd, n_obs):
 
         self.name = 'RRT_star'
         self.x_start = Node(x_start)
@@ -42,8 +42,9 @@ class RRT_Star:
         rnd_path = 'randEnv' if rnd else 'fixedEnv'
         c_path = f'_C_{self.stop_at}_' if self.stop_at!=0 else ''
         n_path = f'_N_{self.iter_max}_' if self.stop_at==0 else ''
+        obs_path = f'_O_{n_obs}' if rnd else ''
 
-        self.plotting_path = f'{self.name}{n_path}{c_path}{rnd_path}'
+        self.plotting_path = f'{self.name}{n_path}{c_path}{rnd_path}{obs_path}'
 
         self.duration = 0 #to add for the graphic analysis without the plots
 
