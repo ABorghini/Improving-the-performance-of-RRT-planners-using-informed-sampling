@@ -154,6 +154,7 @@ def main():
         h = 100
         step_length = 10
         delta_ = 0.5
+        thickness = 0.1
       else:
         x_start = [10,10]
         x_goal = [17,17]
