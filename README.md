@@ -9,6 +9,7 @@ Control over the seeds from the user was added.
 All the files were updated to a better plotting.
 
 The implementation of the Kinodynamic RRT* has been improved through matlab engine, now it is faster.
+In order to run the kinodynamic implementations a matlab license and matlab engine API are needed.
 
 ## About
 In this implementation we present the rrt* algorithm in 4 different ways. The implementations are:
