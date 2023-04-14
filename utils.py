@@ -55,7 +55,7 @@ def plot(algo, iteration, x_center=None, c_best=np.inf, dist=None, theta=None):
     algo.ax.add_collection(lc)
 
     if algo.name == 'IRRT_star' or algo.name == 'IRRTK_star':
-        if c_best != np.inf:
+        if c_best != np.inf and not algo.mh:
             draw_ellipse(x_center, c_best, dist, theta)
 
 #    if algo.stop_at == 0:
@@ -122,11 +122,12 @@ def plot_grid(name, info, rrt):
     if rrt.name == "RRTK_star" or rrt.name == "IRRTK_star":
         stepsize = 20
     else:
-        if rrt.custom_env:
-            stepsize = 20
-        else:
+        if rrt.rnd:
             stepsize = 5
+        else:
+            stepsize = 20
     ax.yaxis.set_ticks(np.arange(start, end, stepsize))
+    ax.xaxis.set_ticks(np.arange(start, end, stepsize))
 
     #ax.set_visible('False')
     ax.spines['top'].set_visible(False)
@@ -170,7 +171,10 @@ def plot_kino(rrtk, iteration, x_center=None, c_best=np.inf, tau_star=np.inf, di
     t_print = "{:.2f}".format(tau_star)
 
     print("plot_grid")
-    plot_grid(f"{rrtk.name}",f"it = {str(iteration)}/{str(rrtk.iter_max)}, nodes = {str(len(rrtk.V))}, c_best = {c_print}, tau_star = {t_print}", rrtk)
+    if rrtk.stop_at > 0:
+        plot_grid(f"{rrtk.name}",f"it = {str(iteration)}, nodes = {str(len(rrtk.V))}, c_best = {c_print}, tau_star = {t_print}", rrtk)    
+    else:
+        plot_grid(f"{rrtk.name}",f"it = {str(iteration)}/{str(rrtk.iter_max)}, nodes = {str(len(rrtk.V))}, c_best = {c_print}, tau_star = {t_print}", rrtk)
     states_list = []
     for idx, node in enumerate(path):
         print(idx)
@@ -201,11 +205,11 @@ def plot_kino(rrtk, iteration, x_center=None, c_best=np.inf, tau_star=np.inf, di
     plt.plot(x,y, color='c')
 
     plt.plot(x_,y_, color='g', marker='o', linestyle='', markersize=4)
-    plt.show()
+    # plt.show()
     create_dir(rrtk.plotting_path)
     if iteration == rrtk.iter_max:
         plt.savefig(f'{rrtk.plotting_path}/img_{rrtk.sol + 1}')
     else: 
         plt.savefig(f'{rrtk.plotting_path}/img_{rrtk.sol}')
-
+    plt.pause(0.01)
     return

@@ -73,7 +73,7 @@ classdef eqs < handle
             p([obj.x0',obj.x1']) = fliplr(p1);
             obj.tau_f = matlabFunction(p);
             radius = 1;
-            obstacles = obs
+            obstacles = obs;
             % obstacles = [60,0,10,20;
             %   60,30,10,70;
             %   30,0,10,70;

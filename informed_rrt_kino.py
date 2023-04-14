@@ -5,12 +5,14 @@ from sympy import *
 from sympy.abc import x
 from env_kino import NodeKino
 from collections import deque
-from utils import plot_kino, plot_grid
+from utils import plot_kino, plot_grid, create_dir
 import time as timing
 from scipy.stats import multivariate_normal
 import matlab.engine
 
 from scipy.stats import norm, multivariate_normal, bernoulli
+import matplotlib
+matplotlib.use('Agg')
 
 
 class Informed_RRT_Star_Kino(RRT_Star_Kino):
@@ -27,7 +29,8 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         input_limits=[[-5, 5], [-5, 5]],
         stop_at=-np.inf,
         custom_env=False,
-        seed=666
+        seed=666,
+        ppath="./simulations"
     ):
 
         super().__init__(
@@ -42,7 +45,8 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
             input_limits,
             stop_at,
             custom_env,
-            seed
+            seed,
+            ppath
         )
 
         self.name = "IRRTK_star"
@@ -56,6 +60,9 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         self.sol = 0
 
     def init(self):
+        # create_dir(self.ppath)
+        # with open(f"{self.ppath}/{self.name}_{self.seed}.tsv", "w") as f:
+        #     f.write("It\tC_best\tT_best\tTime\tN_nodi\tB_path\tSol\n")
         self.eng = matlab.engine.start_matlab()
         self.matlab = self.eng.eqs(self.state_dims, self.input_dims, self.state_limits, self.input_limits, self.max_radius, np.array(self.env.obs_rectangle, dtype=np.float64))
         self.t = Symbol("t")
@@ -202,11 +209,12 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         self.c_best = np.inf
         self.t_best = np.inf
         self.x_best = self.x_start
-    
+        sol = 0
         i = 0
         while i < self.iter_max and self.c_best > self.stop_at:
             print(f"Iteration {i} #######################################")
             # print(len(self.V))
+            ts = timing.time()
             i += 1
 
             x_rand = self.Sample(i)
@@ -224,17 +232,32 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
             # the cost(x_start->x_rand->node) < cost(x_start->node)
             x_rand = self.Rewire(x_rand)
 
+            # with open(f"{self.ppath}/{self.name}_{self.seed}.tsv", "a") as f:
+            #     if self.sol > sol:
+            #         self.path = self.ExtractPath(self.x_best)
+            #         plot_kino(self, i, c_best=self.c_best, tau_star=self.t_best)
+            sol = self.sol
+
             # isBest: check whether the path cost from x_start->x_goal 
             # passing through x_rand is better than the previous best path cost 
             x_rand = self.isBest(x_rand, i) #modified for the GIF
+            te = timing.time()
+
+            # with open(f"{self.ppath}/{self.name}_{self.seed}.tsv", "a") as f:
+            #     if self.sol > sol:
+            #             b_path = [elem.tolist() for elem in self.ExtractPath(self.x_best)]
+            #             f.write(f"{i}\t{self.c_best}\t{self.t_best}\t{te-ts}\t{len(self.V)}\t{b_path}\t{True}\n")
+            #     else:
+            #         f.write(f"{i}\t{self.c_best}\t{self.t_best}\t{te-ts}\t{len(self.V)}\n")
+            sol = self.sol
 
 
         print("self.c_best", self.c_best)
         self.path = self.ExtractPath(self.x_best)
         # print(self.path)
         plot_kino(self, i, c_best=self.c_best, tau_star=self.t_best)
-        plt.pause(2.01)
-        animate(self)
+        plt.pause(0.01)
+        # animate(self)
         self.eng.quit()
 
     def eval_arrival_time(self, x0_, x1_):
@@ -440,8 +463,6 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         mean_data = np.mean(data, axis=0) # mean on the columns
         
         cov = [[200., 0., 0., 0.], [0., 200., 0., 0.], [0., 0., 9., 0.], [0., 0., 0., 9.]] #base value
-        if np.array_equal(np.array(self.x_goal.node), np.array(x)):
-            print(mean_data)
         return np.log(multivariate_normal.pdf(
             np.array(x).flatten(), mean=mean_data.flatten(), cov=cov
         ))

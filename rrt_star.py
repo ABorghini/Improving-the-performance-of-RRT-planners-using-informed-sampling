@@ -12,7 +12,7 @@ import time as timing
 
 class RRT_Star:
     def __init__(self, env, x_start, x_goal, step_len,
-                 goal_sample_rate, search_radius, iter_max, r_RRT, r_goal, stop_at, rnd, n_obs, custom_env, seed, env_seed):
+                 goal_sample_rate, search_radius, iter_max, r_RRT, fixed_near_radius, r_goal, stop_at, rnd, n_obs, custom_env, seed, env_seed):
 
         self.name = 'RRT_star'
         self.x_start = Node(x_start)
@@ -22,14 +22,16 @@ class RRT_Star:
         self.search_radius = search_radius
         self.iter_max = iter_max
         self.r_RRT = r_RRT
+        self.fixed_near_radius=fixed_near_radius
         self.r_goal = r_goal
         self.env = env
         self.stop_at = stop_at
         self.custom_env = custom_env
         self.seed = seed
         self.env_seed = env_seed
+        self.rnd = rnd
 
-        if self.stop_at!=0:
+        if self.stop_at>0:
             self.iter_max = 10000
 
         self.fig, self.ax = plt.subplots()
@@ -77,7 +79,7 @@ class RRT_Star:
             x_new = self.Steer(x_nearest, x_rand)
 
             if not self.env.isCollision(x_nearest, x_new):
-                X_near = self.Near(self.V, x_new, self.r_RRT) # r_RRT
+                X_near = self.Near(self.V, x_new, self.r_RRT, self.fixed_near_radius) # r_RRT
                 c_min = self.Cost(x_nearest, x_new)
 
                 # choose parent
@@ -126,9 +128,12 @@ class RRT_Star:
     def Nearest(self, x_rand):
         return self.V[int(np.argmin([(n.x - x_rand.x) ** 2 + (n.y - x_rand.y) ** 2 for n in self.V]))]
 
-    def Near(self, V, x_new, search_radius = 20):
+    def Near(self, V, x_new, search_radius = 20, fixed=False):
         n = len(V) + 1
-        r = min((search_radius * math.sqrt((math.log(n) / n))), self.step_len)
+        if fixed:
+            r = search_radius
+        else:
+            r = max((search_radius * math.sqrt((math.log(n) / n))), self.step_len)
         # self.step_len = r
         r2 = r**2
         dist_table = [(n.x - x_new.x) ** 2 + (n.y - x_new.y) ** 2 for n in V]

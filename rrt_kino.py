@@ -6,14 +6,16 @@ from sympy.abc import x
 from env_kino import NodeKino, EnvKino
 import random
 from collections import deque
-from utils import animate, plot_kino
+from utils import animate, plot_kino, create_dir
 import time as timing
 import matlab.engine
+import matplotlib
+matplotlib.use('Agg')
 
 class RRT_Star_Kino(RRT_Star):
     def __init__(self, env = None, x_start = [2,2,0,0], x_goal = [50,65,0,0], max_radius = 100,
                  iter_max = 50, state_dims = 4, input_dims = 2, state_limits = [[0, 100], [0, 100], [-10, 10], [-10, 10]],
-                 input_limits = [[-5, 5], [-5, 5]], stop_at = -np.inf, custom_env = False, seed = 666):
+                 input_limits = [[-5, 5], [-5, 5]], stop_at = -np.inf, custom_env = False, seed = 666, ppath="./simulations"):
 
         self.name = 'RRTK_star'
         self.state_dims = state_dims
@@ -38,6 +40,8 @@ class RRT_Star_Kino(RRT_Star):
 
 
         self.iter_max = iter_max
+        if self.stop_at > 0:
+            self.iter_max = 8000
         self.V = []
         self.max_radius = max_radius
         self.env = env
@@ -57,9 +61,14 @@ class RRT_Star_Kino(RRT_Star):
         self.plotting_path = f'{self.name}{n_path}{c_path}{custom_path}{s_path}'
         self.sol = 0
         self.firstsol = None
+        self.ppath = ppath
 
 
     def init(self):
+        # create_dir(self.ppath)
+        # with open(f"{self.ppath}/{self.name}_{self.seed}.tsv", "w") as f:
+        #     f.write("It\tC_best\tT_best\tTime\tN_nodi\tB_path\tSol\n")
+
         self.eng = matlab.engine.start_matlab()
         self.matlab = self.eng.eqs(self.state_dims, self.input_dims, self.state_limits, self.input_limits, self.max_radius, np.array(self.env.obs_rectangle, dtype=np.float64))
 
@@ -200,11 +209,12 @@ class RRT_Star_Kino(RRT_Star):
         self.t_best = np.inf
         self.x_best = self.x_start
    
-
+        sol = 0
         i = 0
         while i<self.iter_max and self.c_best > self.stop_at:
             print(f"Iteration {i} #######################################")
             # print(len(self.V))
+            ts = timing.time()
             i += 1
 
             x_rand = self.Sample()
@@ -222,16 +232,31 @@ class RRT_Star_Kino(RRT_Star):
             # the cost(x_start->x_rand->node) < cost(x_start->node)
             x_rand = self.Rewire(x_rand)       
 
+            # with open(f"{self.ppath}/{self.name}_{self.seed}.tsv", "a") as f:
+            #     if self.sol > sol:
+            #         self.path = self.ExtractPath(self.x_best)
+            #         plot_kino(self, i, c_best=self.c_best, tau_star=self.t_best)
+            sol = self.sol
+
             # isBest: check whether the path cost from x_start->x_goal 
             # passing through x_rand is better than the previous best path cost 
             x_rand =  self.isBest(x_rand, i)
+            te = timing.time()
+            # with open(f"{self.ppath}/{self.name}_{self.seed}.tsv", "a") as f:
+            #     if self.sol > sol:
+            #             b_path = [elem.tolist() for elem in self.ExtractPath(self.x_best)]
+            #             f.write(f"{i}\t{self.c_best}\t{self.t_best}\t{te-ts}\t{len(self.V)}\t{b_path}\t{True}\n")
+            #     else:
+            #         f.write(f"{i}\t{self.c_best}\t{self.t_best}\t{te-ts}\t{len(self.V)}\n")
+            sol = self.sol
+            
             
     
         print("self.c_best", self.c_best)
         self.path = self.ExtractPath(self.x_best)
         # print(self.path)
         plot_kino(self, i, c_best=self.c_best, tau_star=self.t_best)
-        plt.pause(2.01)
+        plt.pause(0.01)
         animate(self)
         self.eng.quit()
         

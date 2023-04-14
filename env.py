@@ -35,10 +35,11 @@ class Env:
         return obs_boundary
 
     def add_rectangle(self, x, y, w, h):
-        if (0 <= self.x_start[0] - (x - self.delta) <= w + 2 * self.delta \
-            and 0 <= self.x_start[1] - (y - self.delta) <= h + 2 * self.delta) \
-                or (0 <= self.x_goal[0] - (x - self.delta) <= w + 2 * self.delta \
-                    and 0 <= self.x_goal[1] - (y - self.delta) <= h + 2 * self.delta) :
+        delta = self.delta * 3
+        if (0 <= self.x_start[0] - (x - delta) <= w + 2 * delta \
+            and 0 <= self.x_start[1] - (y - delta) <= h + 2 * delta) \
+                or (0 <= self.x_goal[0] - (x - delta) <= w + 2 * delta \
+                    and 0 <= self.x_goal[1] - (y - delta) <= h + 2 * delta) :
                         return
         
         else:
