@@ -39,9 +39,15 @@ python main.py -k
 ```
 Adding this argument will run the kinodynamic version of the rrt* algorithm.
 
+### Metropolis Hastings `-mh`
+```
+python main.py -mh
+```
+Adding this argument will run the euclidean version of the rrt* algorithm with Metropolis Hastings sampler.
+
 ### Random `-r`
 ```
-python main.py -r 
+python main.py -r
 ```
 It makes the environment randomly generated.
 
@@ -50,6 +56,12 @@ It makes the environment randomly generated.
 python main.py -e
 ```
 It selects the custom environment instead of the fixed one.
+
+### Sqaure environment `-q`
+```
+python main.py -q
+```
+It selects the square environment.
 
 ### Obstacles number `-o`
 ```
@@ -67,6 +79,12 @@ It will specify the number of iterations of the algorithm (default is set to 500
 ```
 python main.py -c <cost_of_the_best_path>
 ```
+### Fix near radius `-fnr`
+```
+python main.py -fnr
+```
+Set the radius close to a fixed default value instead of iteratively decreasing it during the execution.
+
 It will specify the minimum value of the cost of the best path the user want to achieve (if not specified the code will run until reaching the maximum number of iterations).
 
 After different simulations we found out suitable values to choose for this argument. (Differences are mainly due to the environment)
