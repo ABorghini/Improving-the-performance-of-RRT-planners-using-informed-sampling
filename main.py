@@ -55,9 +55,12 @@ def create_env(env, rnd, n_obs, custom_env=False, quad = False):
                 [30,0,10,70],
                 [30,80,10,20]
             ]
-
+  obs_area = 0
   for rect in obs_rectangle:
+    obs_area += rect[2]*rect[3]
     env.add_rectangle(rect[0], rect[1], rect[2], rect[3])
+  # print(obs_area)
+  return obs_area
 
 
 def main():
@@ -103,6 +106,7 @@ def main():
         t=0.1
         random_ = False
         delta = 0.6
+        
       elif quad:
         random_ = False
         x_start = [35, 50, 0, 0]  # Starting node #50 50 #10 10 
@@ -129,33 +133,43 @@ def main():
         delta = 0.6
 
       env = EnvKino(x_start=x_start, x_goal=x_goal, delta=delta, w=w, h=h, thickness=t)
-      create_env(env, rnd=random_, n_obs=obs, custom_env=custom_env, quad=quad)
+      obs_area = create_env(env, rnd=random_, n_obs=obs, custom_env=custom_env, quad=quad)
 
       if informed:
+          # SEED = 800
+        # seeds = [s for s in range(0,1000,100)]
+        # for SEED in seeds:
+        #   random.seed(SEED)
+        #   np.random.seed(SEED)
         rrt_star = Informed_RRT_Star_Kino(env = env, 
                                     x_start = x_start, 
                                     x_goal = x_goal,
-                                    max_radius = 100, 
                                     iter_max = iterations,
                                     state_dims = 4,
                                     input_dims = 2,
                                     state_limits = [[0, 100], [0, 100], [-10, 10], [-10, 10]],
                                     input_limits = [[-5, 5], [-5, 5]],
                                     stop_at= c_best,
+                                    custom_env=custom_env,
                                     seed=SEED)
+          # rrt_star.planning()
       else:
+        # seeds = [s for s in range(0,1000,100)]
+        # for SEED in seeds:
+        #   random.seed(SEED)
+        #   np.random.seed(SEED)
         rrt_star = RRT_Star_Kino(env = env, 
                                   x_start = x_start, 
                                   x_goal = x_goal, 
-                                  max_radius = 100, 
                                   iter_max = iterations,
                                   state_dims = 4,
                                   input_dims = 2,
                                   state_limits = [[0, 100], [0, 100], [-10, 10], [-10, 10]],
                                   input_limits = [[-5, 5], [-5, 5]],
                                   stop_at= c_best,
+                                  custom_env=custom_env,
                                   seed=SEED)
-        
+          # rrt_star.planning()
     else: #not kino
       if custom_env:
         x_start = [2,95]
@@ -164,8 +178,10 @@ def main():
         h = 100
         delta = 0.2
         t=0.1
-        step_len = 5
+        step_len = 10
         random_ = False
+        r_RRT = 25     
+        #deve essere maggiore di 122.30
       elif quad:
         random_ = False
         x_start = [35, 50]  # Starting node #50 50 #10 10 
@@ -175,6 +191,7 @@ def main():
         h=100
         t=0.1
         delta = 0.2
+        r_RRT = 20
         step_len = 3
         random_ = False
       elif random_:
@@ -183,6 +200,7 @@ def main():
         w = 20
         h = 20
         t=0.02
+        r_RRT = 5
         step_len = 1
         delta = 0.1
       else:
@@ -191,13 +209,24 @@ def main():
         w = 100
         h = 100
         step_len=3
+        r_RRT = 25
         delta = 0.2
         t=0.1
 
       env = Env(x_start=x_start, x_goal=x_goal, delta=delta, w=w, h=h, thickness=t)
-      create_env(env, rnd=random_, n_obs=obs, custom_env=custom_env, quad=quad)
+      obs_area = create_env(env, rnd=random_, n_obs=obs, custom_env=custom_env, quad=quad)
 
+      d = len(x_start)
+      if not fnr:
+        r_RRT = 2*np.power(1+1/d,1/d)*np.power((((w*h)-obs_area)/np.pi),1/d)
+        print("computed neighbour radius: ", r_RRT)
+  
       if informed:
+        # seeds = [s for s in range(0,1000,100)]
+        # for SEED in seeds:
+        #   # SEED = 666
+          # random.seed(ENV_SEED)
+          # np.random.seed(SEED)
         rrt_star = Informed_RRT_Star(env = env, 
                         x_start = x_start, 
                         x_goal = x_goal, 
@@ -205,7 +234,7 @@ def main():
                         goal_sample_rate = 0.10, 
                         search_radius = 12, 
                         iter_max = iterations,
-                        r_RRT = 25,
+                        r_RRT = r_RRT,
                         fixed_near_radius=fnr,
                         r_goal = 1,
                         stop_at = c_best,
@@ -215,8 +244,12 @@ def main():
                         seed=SEED,
                         env_seed=ENV_SEED,
                         mh=mh)
-
+          # rrt_star.planning()
       else:
+        # seeds = [s for s in range(0,1000,100)]
+        # for SEED in seeds:
+        #   random.seed(ENV_SEED)
+        #   np.random.seed(SEED)
         rrt_star = RRT_Star(env = env, 
                                   x_start = x_start, 
                                   x_goal = x_goal, 
@@ -224,7 +257,7 @@ def main():
                                   goal_sample_rate = 0.10, 
                                   search_radius = 12, 
                                   iter_max = iterations,
-                                  r_RRT = 25,
+                                  r_RRT = r_RRT,
                                   fixed_near_radius=fnr,
                                   r_goal = 1,
                                   stop_at = c_best,
@@ -233,7 +266,8 @@ def main():
                                   custom_env=custom_env,
                                   seed=SEED,
                                   env_seed=ENV_SEED)
-    rrt_star.planning()
+      # rrt_star.planning()  
+    rrt_star.planning()  
 
 if __name__ == '__main__':
     main()

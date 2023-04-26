@@ -54,6 +54,10 @@ class RRT_Star:
 
         self.duration = 0 #to add for the graphic analysis without the plots
 
+        self.ppath = 'simulations'
+
+        # with open(f"{self.ppath}/{self.plotting_path}.tsv", "w") as f:
+        #     f.write("It\tC_best\tTime\tN_nodi\tB_path\tSol\n")
 
     def init(self):
         cMin, theta = self.get_distance_and_angle(self.x_start, self.x_goal)
@@ -71,8 +75,13 @@ class RRT_Star:
         first_enter = 0
         x_best = self.x_start
         i = 0
-        #ts = timing.time()
+        self.sol = 0
+        
         while i<self.iter_max and c_best > self.stop_at:
+            print(f"Iteration {i} #######################################")
+            # ts = timing.time()
+            trovata = False
+            aggiunto = False
 
             x_rand = self.SampleFromSpace()
             x_nearest = self.Nearest(x_rand)
@@ -86,38 +95,49 @@ class RRT_Star:
                 x_new, _ = self.ChooseParent(X_near, x_new, c_min)
 
                 self.V.append(x_new)
-
+                aggiunto = True
                 # Rewire
                 self.Rewire(X_near, x_new)
+                x_best, c_best, trovata = self.search_best(x_best, c_best)
 
-                x = self.V[self.V.index(x_new)]
-
-                if x.equals(self.x_goal): #forse da eliminare
-                    if first_enter==0:
-                        print('entrato alla iterazione', i)
-                        first_enter+=1
-                    x_best = x
-                    c_best = self.Cost(x)
-
+            # te = timing.time()
+            # if aggiunto:
+            #     with open(f"{self.ppath}/{self.plotting_path}.tsv", "a") as f:
+            #         b_path = self.ExtractPath(x_best)
+            #         if trovata:
+            #             f.write(f"{i}\t{c_best}\t{te-ts}\t{len(self.V)}\t{b_path}\t{trovata}\n")
+            #         else:
+            #             f.write(f"{i}\t{c_best}\t{te-ts}\t{len(self.V)}\n")
+                        
             if i % 20 == 0 or i == self.iter_max-1:
                 plot(self, i, c_best=c_best)
             i+=1
 
 
-        x_best, c_best = self.search_best()
-        self.path = self.ExtractPath(x_best)
+        x_best, c_best, trovata = self.search_best(x_best, c_best)
+        self.path = self.ExtractNodes(x_best)
         plot(self, i, c_best=c_best)
-        plt.plot([x for x, _ in self.path], [y for _, y in self.path], color=(1.0,0.0,0.0,1.0))
+        # plt.plot([x for x, _ in self.path], [y for _, y in self.path], color=(1.0,0.0,0.0,1.0))
         plt.savefig(f'{self.plotting_path}/img_{i}1')
         plt.pause(0.001)
         plt.show()
         animate(self)
 
+    def InGoalRegion(self, node):
+        if self.Line(node, self.x_goal) < self.r_goal:
+            return True
+
+        return False
+    
     #initializes a new node in the direction of x_goal, distant at most step_len
     #from x_start
     def Steer(self, x_start, x_goal):
         dist, theta = self.get_distance_and_angle(x_start, x_goal)
-        dist = min(self.step_len, dist)
+        rnear = 20
+        if self.rnd:
+            rnear = 3
+    
+        dist = min(rnear, dist)
 
         node_new = Node((x_start.x + dist * math.cos(theta),
                          x_start.y + dist * math.sin(theta)))
@@ -133,7 +153,11 @@ class RRT_Star:
         if fixed:
             r = search_radius
         else:
-            r = max((search_radius * math.sqrt((math.log(n) / n))), self.step_len)
+            rnear = 20
+            if self.rnd:
+                rnear = 3
+            r = min((search_radius * math.sqrt((math.log(n) / n))), rnear)
+            # print(r)
         # self.step_len = r
         r2 = r**2
         dist_table = [(n.x - x_new.x) ** 2 + (n.y - x_new.y) ** 2 for n in V]
@@ -152,7 +176,7 @@ class RRT_Star:
     def ChooseParent(self, X_near, x_new, c_min):
         for x_near in X_near:
             c_new = self.Cost(x_near, x_new)
-            if c_new < c_min and not self.env.isCollision(x_near, x_new):
+            if c_new < c_min and not self.env.isCollision(x_near,x_new):
                 x_new.parent = x_near
                 c_min = c_new
         return x_new, c_min
@@ -165,19 +189,22 @@ class RRT_Star:
                 self.V[self.V.index(x_near)].parent = x_new
                 # x_near.parent = x_new
 
-    def search_best(self):
+    def search_best(self, x_best, c_best):
         distances = [(n.x - self.x_goal.x) ** 2 + (n.y - self.x_goal.y) ** 2 for n in self.V]
-        r2 = self.step_len**2
+        r2 = self.r_goal**2
         indeces = [i for i in range(len(distances)) if distances[i] <= r2]
-
         if len(indeces)==0:
-            return self.x_goal, np.inf
+            return self.x_start, np.inf, False
         cost, idxs = zip(*[[self.Cost(self.V[idx], self.x_goal), idx] for idx in indeces])
         c_i = np.argmin(np.array(cost))
-        best_index = idxs[c_i]
-        x_best = self.V[best_index]
-        c_best = cost[c_i]
-        return x_best, c_best
+        if cost[c_i] != c_best:
+            best_index = idxs[c_i]
+            x_best = self.V[best_index]
+            c_best = cost[c_i]
+            self.path = self.ExtractNodes(x_best)
+            self.sol += 1
+            return x_best, c_best, True
+        return x_best, c_best, False
 
 
 
@@ -199,6 +226,18 @@ class RRT_Star:
             node = node.parent
 
         path.append([self.x_start.x, self.x_start.y])
+
+        return path
+
+    def ExtractNodes(self, node):
+        path = [self.x_goal]
+
+        while node.parent:
+            # print(node.parent.x,node.parent.y)
+            path.append(node)
+            node = node.parent
+
+        path.append(self.x_start)
 
         return path
 

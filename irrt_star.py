@@ -31,19 +31,33 @@ class Informed_RRT_Star(RRT_Star):
         n_path = f'_N_{self.iter_max}_' if self.stop_at==0 else ''
         s_path = f'_ES_{self.env_seed}_S_{self.seed}'
         o_path = f'_O_{n_obs}' if rnd else ''
+        mh_path = f'_MH_' if self.mh else ''
 
-        self.plotting_path = f'{self.name}{n_path}{c_path}{rnd_path}{s_path}{o_path}'
+        self.plotting_path = f'{self.name}{n_path}{c_path}{rnd_path}{s_path}{o_path}{mh_path}'
+
+        self.ppath = 'simulations'
+
+        # with open(f"{self.ppath}/{self.name}_nodes.tsv", "w") as f:
+        #     f.write("seed\tx_start\tx_goal\tb_path\n")
+
+        # with open(f"{self.ppath}/{self.plotting_path}.tsv", "w") as f:
+        #     f.write("It\tC_best\tTime\tN_nodi\tB_path\tSol\n")
 
         self.duration = 0 #to add for the graphic analysis without the plots
         # The tranistion model defines how to move from sigma_current to sigma_new
         if self.mh:
-
-            self.transition_model = lambda k,z: [
-                np.random.normal(k[0], z*1, (1,))[0],
-                np.random.normal(k[1], z*1, (1,))[0] #0.5
+            tr = 15
+            if self.rnd:
+                tr = 3
+            
+            self.transition_model = lambda k: [
+                np.random.normal(k[0], tr, (1,))[0],
+                np.random.normal(k[1], tr, (1,))[0] #0.5
             ]
 
-            self.X_inf = []
+            self.X_inf = [self.x_start,self.x_goal]
+            self.x_start.no_obs_cost = self.Line(self.x_start,self.x_goal)
+            self.x_goal.no_obs_cost = 0
 
 
     def planning(self):
@@ -51,17 +65,29 @@ class Informed_RRT_Star(RRT_Star):
         c_best = np.inf
    
         x_best = self.x_start
-        sol = 0
+        self.sol = 0
         i = 0
         while i<self.iter_max and c_best > self.stop_at:
+            print(f"Iteration {i} #######################################")
+            # ts = timing.time()
+            trovata = False
+            aggiunto = False
+
+
             if self.X_soln:
                 cost = {node: self.Cost(node, self.x_goal) for node in self.X_soln}
-                x_best = min(cost, key=cost.get)
+                x_best = min(cost, key=cost.get) 
+                if cost[x_best] != c_best:
+                    if self.sol != 1:
+                        self.sol += 1
+                    trovata = True
+                    self.path = self.ExtractNodes(x_best)
+                
                 c_best = cost[x_best]
                 if c_best == self.stop_at:
                     break
 
-            x_rand = self.Sample(c_best, dist, x_center, C, self.mh, i)
+            x_rand = self.Sample(c_best, dist, x_center, C)
             x_nearest = self.Nearest(x_rand)
             x_new = self.Steer(x_nearest, x_rand)
 
@@ -73,6 +99,7 @@ class Informed_RRT_Star(RRT_Star):
                 x_new, _ = self.ChooseParent(X_near, x_new, c_min)
 
                 self.V.append(x_new)
+                aggiunto = True
 
                 # Rewire
                 self.Rewire(X_near, x_new)
@@ -81,20 +108,53 @@ class Informed_RRT_Star(RRT_Star):
                
                 if self.InGoalRegion(x_new):
                     if not self.env.isCollision(x_new, self.x_goal):
+                        if self.sol == 0:
+                            c_ = self.Cost(x_new)
+                            if c_ < c_best:
+                                x_best = x_new
+                                c_best = c_
+                                self.path = self.ExtractNodes(x_best)
+                                self.sol += 1
+                                if self.mh:
+                                    for node in self.V:
+                                        node.no_obs_cost = self.Line(self.x_start,node)+self.Line(node,self.x_goal)
+                                        if node.no_obs_cost < c_best:
+                                            self.X_inf.append(node)    
+                                    
                         if self.mh:
-                            self.X_inf.extend([element for element in self.ExtractPath(x_new) if element not in self.X_inf])
+                            self.X_inf = [x for x in self.X_inf if x.no_obs_cost < c_best] 
+                            for n in self.path[1:-1]:
+                                try:
+                                    idx = self.X_inf.index(n)
+                                    if self.X_inf[idx].no_obs_cost > c_best:
+                                        self.X_inf[idx].no_obs_cost = c_best
+                                except:
+                                    if n.no_obs_cost > c_best:
+                                        n.no_obs_cost = c_best 
+                                    self.X_inf.append(n)
+                            # self.mean_data = np.mean([np.array([element.x,element.y],dtype=np.float64) for element in self.path],axis=0)
+                            self.mean_data = np.mean([np.array([element.x,element.y],dtype=np.float64) for element in self.X_inf],axis=0)
+                            # print(self.mean_data)
                         self.X_soln.add(x_new)
-                        sol += 1
-
+                        
+            # te = timing.time()
+            # if aggiunto:
+            #     with open(f"{self.ppath}/{self.plotting_path}.tsv", "a") as f:
+            #         b_path = self.ExtractPath(x_best)
+            #         if trovata:
+            #             f.write(f"{i}\t{c_best}\t{te-ts}\t{len(self.V)}\t{b_path}\t{trovata}\n")
+            #         else:
+            #             f.write(f"{i}\t{c_best}\t{te-ts}\t{len(self.V)}\n")
+                        
             if i % 20 == 0 or i == self.iter_max-1:
                 plot(self, i, x_center=x_center, c_best=c_best, dist=dist, theta=theta)
             
             i+=1
 
 
-        self.path = self.ExtractPath(x_best)
+        # self.path = self.ExtractPath(x_best)
         plot(self, i, x_center=x_center, c_best=c_best, dist=dist, theta=theta)
-        plt.plot([x for x, _ in self.path], [y for _, y in self.path], color=(1.0,0.0,0.0,1))
+        # plt.plot([x for x, _ in self.path], [y for _, y in self.path], color=(1.0,0.0,0.0,1))
         plt.savefig(f'{self.plotting_path}/img_{i}1')
         plt.pause(0.001)
         plt.show()
@@ -107,8 +167,11 @@ class Informed_RRT_Star(RRT_Star):
         if fixed:
             r = search_radius
         else:
-            r = max((search_radius * math.sqrt((math.log(n) / n))), self.step_len)
-        # print(r)
+            rnear = 20
+            if self.rnd:
+                rnear = 3
+            r = min((search_radius * math.sqrt((math.log(n) / n))), rnear)
+            # print(r)
         # self.step_len = r
         r2 = r**2
         dist_table = [(n.x - x_new.x) ** 2 + (n.y - x_new.y) ** 2 for n in V]
@@ -116,10 +179,10 @@ class Informed_RRT_Star(RRT_Star):
         
         return X_near
 
-    def Sample(self, c_max, c_min, x_center, C, mh=False, it=0):
+    def Sample(self, c_max, c_min, x_center, C):
         if c_max < np.inf: #at least a solution has been found
-            if mh:
-                x_rand = self.MCMC_Sampling(it, c_max)
+            if self.mh:
+                x_rand = self.MCMC_Sampling(c_max)
             else:
                 #radii of the ellipsoid
                 r = [c_max / 2.0,
@@ -145,21 +208,22 @@ class Informed_RRT_Star(RRT_Star):
 
         return False
 
-    def MCMC_Sampling(self, it, c_best):  # x_i, c_best
-        cont = True
+    def MCMC_Sampling(self, c_best):  # x_i, c_best
+        if self.sol == 1:
+            self.last_sample = self.X_inf[np.random.randint(0, len(self.X_inf))]
         while 1:
-            x_0 = self.X_inf[np.random.randint(0, len(self.X_inf))]
-            x_next = self.Metropolis_Hastings(x_0, self.X_inf, it) # [np.array(n.node) for n in self.V]
+            x_next = self.Metropolis_Hastings([self.last_sample.x,self.last_sample.y]) # [np.array(n.node) for n in self.V]
             x_next = Node(x_next)
-            if np.array_equal(np.array(x_next), np.array(x_0)):
+            if np.array_equal(np.array(x_next), np.array(self.last_sample)):
+                self.last_sample = self.X_inf[np.random.randint(0, len(self.X_inf))]
                 continue
             if self.in_informed(x_next, c_best):
+                self.last_sample = x_next
                 break
             else:
+                self.last_sample = self.X_inf[np.random.randint(0, len(self.X_inf))]
                 continue
 
-        # print("x_next", x_next.node)
-        #x_rand = NodeKino(x_next)
         return x_next
 
     def in_informed(self, x, c_best):
@@ -178,6 +242,10 @@ class Informed_RRT_Star(RRT_Star):
             #print('non migliora')
             return False
 
+        x.no_obs_cost = cost
+        self.X_inf.append(x)
+        self.mean_data = np.mean([np.array([element.x,element.y],dtype=np.float64) for element in self.X_inf],axis=0)
+        # print(self.mean_data)
         return True
     
     def prior(self, x):
@@ -191,14 +259,15 @@ class Informed_RRT_Star(RRT_Star):
         return 0
     
     # Computes the likelihood of the data given a sigma (new or current)
-    def manual_log_like_normal(self, x, data):
+    def manual_log_like_normal(self, x):
         # data = the observation
         # return np.sum(-np.log(x[1] * np.sqrt(2* np.pi) )-((data-x[0])**2) / (2*x[1]**2))
-        mean_data = np.mean(data, axis=0) # mean on the columns
-        
-        cov = [[80., 0.], [0., 80.]] #base value
+        # mean_data = np.mean(data, axis=0) # mean on the columns
+        cov = [[600., 0.], [-150., 600.]] #base value
+        if self.rnd:
+            cov = [[80., 0.], [0., 80.]] #base value
         return np.log(multivariate_normal.pdf(
-            np.array(x).flatten(), mean=mean_data.flatten(), cov=cov
+            np.array(x).flatten(), mean=self.mean_data.flatten(), cov=cov
         ))
     
     # Defines whether to accept or reject the new sample
@@ -211,15 +280,12 @@ class Informed_RRT_Star(RRT_Star):
             # less likely x_new are less likely to be accepted
             return accept < (np.exp(x_new - x))
     
-    def Metropolis_Hastings(self, start, data, it):
+    def Metropolis_Hastings(self, start):
         x = start
-
-        r = max((20 * math.sqrt((math.log(it) / it))), 1)
-        # print("r",r)        
-        x_new = self.transition_model(x, r)
-        # print("x_new",x_new)
-        x_lik = self.manual_log_like_normal(x, data)
-        x_new_lik = self.manual_log_like_normal(x_new, data)
+       
+        x_new = self.transition_model(x)
+        x_lik = self.manual_log_like_normal(x)
+        x_new_lik = self.manual_log_like_normal(x_new)
 
         if self.acceptance(
             x_lik + np.log(self.prior(x)), x_new_lik + np.log(self.prior(x_new))
@@ -228,7 +294,18 @@ class Informed_RRT_Star(RRT_Star):
 
         return x
 
-    
+    def ExtractNodes(self, node):
+        path = [self.x_goal]
+
+        while node.parent:
+            # print(node.parent.x,node.parent.y)
+            path.append(node)
+            node = node.parent
+
+        path.append(self.x_start)
+
+        return path
+
     @staticmethod
     def SampleUnitBall():
         while True:

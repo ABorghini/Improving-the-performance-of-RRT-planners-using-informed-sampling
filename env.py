@@ -6,6 +6,7 @@ class Node:
     def __init__(self, n):
         self.x = n[0]
         self.y = n[1]
+        self.no_obs_cost = np.inf
         self.parent = None
     
     def equals(self, __o: object) -> bool:

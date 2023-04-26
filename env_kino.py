@@ -30,6 +30,7 @@ class NodeKino():
         self.near_goal = False
         self.parent = None
         self.children = []
+        self.no_obs_cost = np.inf
 
     def equals(self, __o: object) -> bool:
         if self.node == __o.node:

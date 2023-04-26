@@ -54,15 +54,19 @@ def plot(algo, iteration, x_center=None, c_best=np.inf, dist=None, theta=None):
     lc = mc.LineCollection(lines, linewidths=1, colors=(23/255, 106/255, 255/255, 1))
     algo.ax.add_collection(lc)
 
-    if algo.name == 'IRRT_star' or algo.name == 'IRRTK_star':
-        if c_best != np.inf and not algo.mh:
-            draw_ellipse(x_center, c_best, dist, theta)
-
 #    if algo.stop_at == 0:
     dimension = len(str(algo.iter_max))
     zero_to_add = dimension - len(str(iteration))
     added_zeros = '0'*zero_to_add
-
+    nx, ny = zip(*[[n.x,n.y] for n in algo.V])
+    plt.plot(nx,ny, marker='o', color= 'c', linestyle='', markersize=2)
+    if algo.sol > 0:
+        nx, ny = zip(*[[n.x,n.y] for n in algo.path])
+        plt.plot(nx,ny, marker='o', color= 'r', markersize=2)
+    
+    if algo.name == 'IRRT_star' or algo.name == 'IRRTK_star':
+        if c_best != np.inf and not algo.mh:
+            draw_ellipse(x_center, c_best, dist, theta)
     # else:
     #     dimension = 5 #default set to N = X0'000
     #     zero_to_add = dimension - len(str(iteration))
@@ -187,25 +191,33 @@ def plot_kino(rrtk, iteration, x_center=None, c_best=np.inf, tau_star=np.inf, di
         states_list.extend([states(rrtk.t, t)[0:2] for t in times])
 
     # generated nodes
-    node_listx, node_listy, _, _ = zip(*[node.node for node in rrtk.V])
+    node_listx, node_listy, vx, vy = zip(*[np.array(node.node,dtype=np.float64) for node in rrtk.V])
+    # print(*[list(node_listx),list(node_listy)])
     plt.plot(node_listx, node_listy, marker='o', color= 'plum', linestyle='', markersize=2)
-
+    # plt.quiver(*[list(node_listx),list(node_listy)],list(vx),list(vy),color='r')
     # generated nodes after first solution
     if len(rrtk.V) > rrtk.firstsol:
-        node_listx, node_listy, _, _ = zip(*[node.node for node in rrtk.V[rrtk.firstsol:]])
+        node_listx, node_listy, vx, vy = zip(*[np.array(node.node,dtype=np.float64) for node in rrtk.V[rrtk.firstsol:]])
         plt.plot(node_listx, node_listy, marker='o', color= 'lightskyblue', linestyle='', markersize=2)
+        # plt.quiver(*[list(node_listx),list(node_listy)],list(vx),list(vy),color='r')
 
     x, y = zip(*states_list)
     if len(path) > 2:
-        x_, y_, _, _ = zip(*path[1:-1])
+        x_, y_, vx_, vy_ = zip(*path[1:-1])
     else:
         x_ = []
         y_ = []
 
+
     plt.plot(x,y, color='c')
 
     plt.plot(x_,y_, color='g', marker='o', linestyle='', markersize=4)
+    # plt.quiver(*[list(x_),list(y_)],list(vx_),list(vy_),color='r',scale=5)
     # plt.show()
+    # if rrtk.name == "IRRTK_star":
+    #     node_listx, node_listy, _, _ = zip(*[node.node for node in rrtk.X_inf])
+    #     plt.plot(node_listx, node_listy, marker='o', color= 'red', linestyle='', markersize=2)
+
     create_dir(rrtk.plotting_path)
     if iteration == rrtk.iter_max:
         plt.savefig(f'{rrtk.plotting_path}/img_{rrtk.sol + 1}')
