@@ -50,7 +50,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         self.name = "IRRTK_star"
         self.p_best = [self.x_start.node, self.x_goal.node]  # initial best path
         plt.ion()
-        custom_path = '_customEnv' if self.custom_env else '_fixedEnv'
+        custom_path = '_customEnv_' if self.custom_env else '_fixedEnv'
         c_path = f'_C_{self.stop_at}' if self.stop_at!=0 else ''
         n_path = f'_N_{self.iter_max}' if self.stop_at==0 else ''
         s_path = f'_S_{self.seed}'
@@ -58,9 +58,9 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         self.sol = 0
 
     def init(self):
-        # create_dir(self.ppath)
-        # with open(f"{self.ppath}/{self.plotting_path}.tsv", "w") as f:
-        #     f.write("It\tC_best\tT_best\tTime\tN_nodi\tB_path\tSol\n")
+        create_dir(self.ppath)
+        with open(f"{self.ppath}/{self.plotting_path}.tsv", "w") as f:
+            f.write("It\tC_best\tT_best\tTime\tN_nodi\tB_path\tSol\n")
         self.eng = matlab.engine.start_matlab()
         self.matlab = self.eng.eqs(self.state_dims, self.input_dims, self.state_limits, self.input_limits, np.array(self.env.obs_rectangle, dtype=np.float64), np.array(self.x_start.node,dtype=np.float64), np.array(self.x_goal.node,dtype=np.float64))
         self.t = Symbol("t")
@@ -194,7 +194,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
 
         self.V.append(self.x_start)
 
-        # The tranistion model defines how to move from sigma_current to sigma_new
+        # The tranistion model defines how to move from node to node in the markov chain
         self.transition_model = lambda x,y: [
             np.random.normal(x[i], 15, (1,))[0] if i<2 else np.random.normal(x[i], 6, (1,))[0] for i in range(len(x)) #0.5
         ]
@@ -220,7 +220,7 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         while i < self.iter_max and self.c_best > self.stop_at:
             print(f"Iteration {i} #######################################")
            
-            # ts = timing.time()
+            ts = timing.time()
             i += 1
 
             x_rand = self.Sample(i)
@@ -238,26 +238,26 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
             # the cost(x_start->x_rand->node) < cost(x_start->node)
             x_rand = self.Rewire(x_rand)
 
-            # with open(f"{self.ppath}/{self.plotting_path}.tsv", "a") as f:
-            #     if self.sol > sol:
-            #         self.path = self.ExtractPath(self.x_best)
-            #         plot_kino(self, i, c_best=self.c_best, tau_star=self.t_best)
-            #         b_path = [elem.tolist() for elem in self.ExtractPath(self.x_best)]
-            #         f.write(f"{i}\t{self.c_best}\t{self.t_best}\t{te-ts}\t{len(self.V)}\t{b_path}\t{True}\n")
+            with open(f"{self.ppath}/{self.plotting_path}.tsv", "a") as f:
+                if self.sol > sol:
+                    self.path = self.ExtractPath(self.x_best)
+                    plot_kino(self, i, c_best=self.c_best, tau_star=self.t_best)
+                    b_path = [elem.tolist() for elem in self.ExtractPath(self.x_best)]
+                    f.write(f"{i}\t{self.c_best}\t{self.t_best}\t{te-ts}\t{len(self.V)}\t{b_path}\t{True}\n")
             sol = self.sol
 
             # isBest: check whether the path cost from x_start->x_goal 
             # passing through x_rand is better than the previous best path cost 
             x_rand = self.isBest(x_rand, i) #modified for the GIF
            
-            # te = timing.time()
+            te = timing.time()
 
-            # with open(f"{self.ppath}/{self.plotting_path}.tsv", "a") as f:
-            #     if self.sol > sol:
-            #             b_path = [elem.tolist() for elem in self.ExtractPath(self.x_best)]
-            #             f.write(f"{i}\t{self.c_best}\t{self.t_best}\t{te-ts}\t{len(self.V)}\t{b_path}\t{True}\n")
-            #     else:
-            #         f.write(f"{i}\t{self.c_best}\t{self.t_best}\t{te-ts}\t{len(self.V)}\n")
+            with open(f"{self.ppath}/{self.plotting_path}.tsv", "a") as f:
+                if self.sol > sol:
+                        b_path = [elem.tolist() for elem in self.ExtractPath(self.x_best)]
+                        f.write(f"{i}\t{self.c_best}\t{self.t_best}\t{te-ts}\t{len(self.V)}\t{b_path}\t{True}\n")
+                else:
+                    f.write(f"{i}\t{self.c_best}\t{self.t_best}\t{te-ts}\t{len(self.V)}\n")
             sol = self.sol
 
 
@@ -521,17 +521,20 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
         # cov = np.cov(np.array(data).T)
         # print("cov",cov)
         # print("mean", mean_data)
-        cov = [[400., 0., 0., 0.], [0., 400., 0., 0.], [0., 0., 30., 0.], [0., 0., 0., 30.]]
+        # cov = [[400., 0., 0., 0.], [0., 400., 0., 0.], [0., 0., 30., 0.], [0., 0., 0., 30.]]
         # cov = [[500., -150., 100., -20.], [-150., 500., -20., 100.], [300., -100., 40., 0.], [-100.,300., 0., 50.]]
         # cov = [ [ 5.00000000e+02, -1.50000000e+02,  1.00000000e+02, -2.04348934e-14],
         #         [-1.50000000e+02,  5.00000000e+02, -1.13670430e-14,  1.00000000e+02],
         #         [ 1.00000000e+02, -1.26954736e-14,  4.00000000e+01, -1.83030025e-14],
         #         [-1.22652335e-14,  1.00000000e+02, -1.78373382e-14,  5.00000000e+01]]
-        # cov = [[ 5.00000000e+02, -1.50000000e+02, -3.00000000e+01, -1.05084096e-14],
-        #         [-1.50000000e+02,  5.00000000e+02,  3.21120687e-15, -3.00000000e+01],
-        #         [-3.00000000e+01,  6.74262167e-15,  3.00000000e+01, -2.50000000e+01],
-        #         [-1.06493816e-14, -3.00000000e+01, -2.50000000e+01,  3.00000000e+01]]
-       
+        cov = [[ 5.00000000e+02, -1.50000000e+02, -3.00000000e+01, -1.05084096e-14],
+                [-1.50000000e+02,  5.00000000e+02,  3.21120687e-15, -3.00000000e+01],
+                [-3.00000000e+01,  6.74262167e-15,  3.00000000e+01, -2.50000000e+01],
+                [-1.06493816e-14, -3.00000000e+01, -2.50000000e+01,  3.00000000e+01]]
+        # cov = [[ 7.00000000e+02, -3.50000000e+02, -3.00000000e+01,  2.43117748e-14],
+        #     [-3.50000000e+02,  7.00000000e+02,  1.31838885e-14, -3.00000000e+01],
+        #     [-3.00000000e+01,  1.38798690e-14,  3.00000000e+01, -2.50000000e+01],
+        #     [ 2.27545084e-14, -3.00000000e+01, -2.50000000e+01,  3.00000000e+01]]
         return np.log(multivariate_normal.pdf(
             np.array(x).flatten(), mean=mean_data.flatten(), cov=cov
         ))
@@ -553,8 +556,8 @@ class Informed_RRT_Star_Kino(RRT_Star_Kino):
 
         r = max((15 * math.sqrt((math.log(it) / it))), 4)
         x_new = self.transition_model(x, r)
-        # if random.uniform(0.0,1.0) >= 0.50:
-        #     x_new = [np.float64(x[0]),np.float64(x[1]),x_new[2],x_new[3]]
+        if it > self.iter_max*(2/3) and random.uniform(0.0,1.0) >= 0.20:
+            x_new = [np.float64(x[0]),np.float64(x[1]),x_new[2],x_new[3]]
         
         x_lik = self.manual_log_like_normal(x, data)
         x_new_lik = self.manual_log_like_normal(x_new, data)

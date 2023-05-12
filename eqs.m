@@ -230,7 +230,7 @@ classdef eqs < handle
                         if obj.state_free(states,[0,partial_time]) && obj.input_free(u,[0,partial_time])
     
                             new_time = partial_time + x_rand_time;
-                            diff = diff + costs(node.index) - new_cost; %NON VA SOMMATO DIFF PERCHè AGGIORNIAMO IL COSTO DEL PADRE CON L'IMPROVEMENT ALL'INIZIO DEL CICLO
+                            diff = diff + costs(node.index) - new_cost; 
                             time_diff = time_diff + times(node.index) - new_time;
                             costs(node.index) = new_cost;
                             times(node.index) = new_time;

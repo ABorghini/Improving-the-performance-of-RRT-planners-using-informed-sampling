@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 from env import Node, Env
 from utils import plot, animate
 import time as timing
-
+# import matplotlib
+# matplotlib.use('Agg')
 
 class RRT_Star:
     def __init__(self, env, x_start, x_goal, step_len,
@@ -98,7 +99,7 @@ class RRT_Star:
                 aggiunto = True
                 # Rewire
                 self.Rewire(X_near, x_new)
-                x_best, c_best, trovata = self.search_best(x_best, c_best)
+                # x_best, c_best, trovata = self.search_best(x_best, c_best)
 
             # te = timing.time()
             # if aggiunto:

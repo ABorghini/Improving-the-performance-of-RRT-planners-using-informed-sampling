@@ -10,7 +10,8 @@ from env import Node, Env
 from utils import plot, animate
 import time as timing
 from scipy.stats import multivariate_normal
-
+# import matplotlib
+# matplotlib.use('Agg')
 
 class Informed_RRT_Star(RRT_Star):
     def __init__(self, env, x_start, x_goal, step_len,
@@ -40,8 +41,8 @@ class Informed_RRT_Star(RRT_Star):
         # with open(f"{self.ppath}/{self.name}_nodes.tsv", "w") as f:
         #     f.write("seed\tx_start\tx_goal\tb_path\n")
 
-        # with open(f"{self.ppath}/{self.plotting_path}.tsv", "w") as f:
-        #     f.write("It\tC_best\tTime\tN_nodi\tB_path\tSol\n")
+        with open(f"{self.ppath}/{self.plotting_path}.tsv", "w") as f:
+            f.write("It\tC_best\tTime\tN_nodi\tB_path\tSol\n")
 
         self.duration = 0 #to add for the graphic analysis without the plots
         # The tranistion model defines how to move from sigma_current to sigma_new
@@ -58,6 +59,8 @@ class Informed_RRT_Star(RRT_Star):
             self.X_inf = [self.x_start,self.x_goal]
             self.x_start.no_obs_cost = self.Line(self.x_start,self.x_goal)
             self.x_goal.no_obs_cost = 0
+            self.c = 0
+            self.tot = 0
 
 
     def planning(self):
@@ -69,7 +72,7 @@ class Informed_RRT_Star(RRT_Star):
         i = 0
         while i<self.iter_max and c_best > self.stop_at:
             print(f"Iteration {i} #######################################")
-            # ts = timing.time()
+            ts = timing.time()
             trovata = False
             aggiunto = False
 
@@ -132,19 +135,19 @@ class Informed_RRT_Star(RRT_Star):
                                     if n.no_obs_cost > c_best:
                                         n.no_obs_cost = c_best 
                                     self.X_inf.append(n)
-                            # self.mean_data = np.mean([np.array([element.x,element.y],dtype=np.float64) for element in self.path],axis=0)
-                            self.mean_data = np.mean([np.array([element.x,element.y],dtype=np.float64) for element in self.X_inf],axis=0)
+                            self.mean_data = np.mean([np.array([element.x,element.y],dtype=np.float64) for element in self.path],axis=0)
+                            # self.mean_data = np.mean([np.array([element.x,element.y],dtype=np.float64) for element in self.X_inf],axis=0)
                             # print(self.mean_data)
                         self.X_soln.add(x_new)
                         
-            # te = timing.time()
-            # if aggiunto:
-            #     with open(f"{self.ppath}/{self.plotting_path}.tsv", "a") as f:
-            #         b_path = self.ExtractPath(x_best)
-            #         if trovata:
-            #             f.write(f"{i}\t{c_best}\t{te-ts}\t{len(self.V)}\t{b_path}\t{trovata}\n")
-            #         else:
-            #             f.write(f"{i}\t{c_best}\t{te-ts}\t{len(self.V)}\n")
+            te = timing.time()
+            if aggiunto:
+                with open(f"{self.ppath}/{self.plotting_path}.tsv", "a") as f:
+                    b_path = self.ExtractPath(x_best)
+                    if trovata:
+                        f.write(f"{i}\t{c_best}\t{te-ts}\t{len(self.V)}\t{b_path}\t{trovata}\n")
+                    else:
+                        f.write(f"{i}\t{c_best}\t{te-ts}\t{len(self.V)}\n")
                         
             if i % 20 == 0 or i == self.iter_max-1:
                 plot(self, i, x_center=x_center, c_best=c_best, dist=dist, theta=theta)
@@ -183,6 +186,7 @@ class Informed_RRT_Star(RRT_Star):
         if c_max < np.inf: #at least a solution has been found
             if self.mh:
                 x_rand = self.MCMC_Sampling(c_max)
+                # print(self.c/self.tot)
             else:
                 #radii of the ellipsoid
                 r = [c_max / 2.0,
@@ -198,7 +202,7 @@ class Informed_RRT_Star(RRT_Star):
                 x_rand = Node((x_rand[(0, 0)], x_rand[(1, 0)]))
         else:
             x_rand = self.SampleFromSpace()
-
+        
         return x_rand
 
 
@@ -244,7 +248,7 @@ class Informed_RRT_Star(RRT_Star):
 
         x.no_obs_cost = cost
         self.X_inf.append(x)
-        self.mean_data = np.mean([np.array([element.x,element.y],dtype=np.float64) for element in self.X_inf],axis=0)
+        # self.mean_data = np.mean([np.array([element.x,element.y],dtype=np.float64) for element in self.X_inf],axis=0)
         # print(self.mean_data)
         return True
     
@@ -265,7 +269,7 @@ class Informed_RRT_Star(RRT_Star):
         # mean_data = np.mean(data, axis=0) # mean on the columns
         cov = [[600., 0.], [-150., 600.]] #base value
         if self.rnd:
-            cov = [[80., 0.], [0., 80.]] #base value
+            cov = [[7., 4.], [4., 7.]] #base value
         return np.log(multivariate_normal.pdf(
             np.array(x).flatten(), mean=self.mean_data.flatten(), cov=cov
         ))
@@ -290,8 +294,10 @@ class Informed_RRT_Star(RRT_Star):
         if self.acceptance(
             x_lik + np.log(self.prior(x)), x_new_lik + np.log(self.prior(x_new))
         ):
+            # self.c += 1
+            # self.tot += 1
             return x_new
-
+        # self.tot += 1
         return x
 
     def ExtractNodes(self, node):

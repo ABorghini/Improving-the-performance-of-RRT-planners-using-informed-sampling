@@ -222,11 +222,11 @@ def main():
         print("computed neighbour radius: ", r_RRT)
   
       if informed:
-        # seeds = [s for s in range(0,1000,100)]
+        seeds = [s for s in range(500,1000,100)]
         # for SEED in seeds:
         #   # SEED = 666
-          # random.seed(ENV_SEED)
-          # np.random.seed(SEED)
+        #   random.seed(ENV_SEED)
+        #   np.random.seed(SEED)
         rrt_star = Informed_RRT_Star(env = env, 
                         x_start = x_start, 
                         x_goal = x_goal, 
