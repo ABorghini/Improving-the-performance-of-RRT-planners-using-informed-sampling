@@ -10,7 +10,7 @@
 | Square obstacle  | ![quad_rrt_](https://github.com/ABorghini/Improving-the-performance-of-RRT-planners-using-informed-sampling/assets/87773518/a49b9cdc-8fea-4e66-8448-31197a92dae7) | ![quad_irrt_](https://github.com/ABorghini/Improving-the-performance-of-RRT-planners-using-informed-sampling/assets/87773518/ed7510fc-22d6-41bb-adbb-4e9a08f070fd) |
 
 ## Kinodynamic Domain
-|    | RRT* | IRRT* |
+|    | RRTK* | IRRTK* |
 | ------------- |:-------:|:------:|
 | Fixed environment | ![fixed_rrt](https://github.com/ABorghini/Improving-the-performance-of-RRT-planners-using-informed-sampling/assets/87773518/6f043381-c945-45fc-92ac-a2ef1d175a99) | ![fixed_irrt](https://github.com/ABorghini/Improving-the-performance-of-RRT-planners-using-informed-sampling/assets/87773518/6648c600-fb7a-46cc-af44-4f62f7fda039) | 
 | Maze-like environment | ![ml_rrt](https://github.com/ABorghini/Improving-the-performance-of-RRT-planners-using-informed-sampling/assets/87773518/05a9722c-8c4a-417c-8fc7-ebf79a3f3400) | ![ml_irrt](https://github.com/ABorghini/Improving-the-performance-of-RRT-planners-using-informed-sampling/assets/87773518/85d23e7a-2e78-4d27-bb81-47b6a933d0a4) |
