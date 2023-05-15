@@ -3,25 +3,13 @@
 [![Python][python-shield]][python-url]
 [![Matlab][maltab-shield]][matlab-url]
 
+## Euclidean Domain
 |    | RRT* | IRRT* |
 | ------------- |:-------:|:------:|
 | Random obstacles | ![rand_rrt](https://github.com/ABorghini/Improving-the-performance-of-RRT-planners-using-informed-sampling/assets/87773518/ff2a6c7b-8ede-494f-a5df-dce4e8e30775) | ![rand_irrt](https://github.com/ABorghini/Improving-the-performance-of-RRT-planners-using-informed-sampling/assets/87773518/b8b05cdc-ed47-40fe-88e1-db25e082af42) |
 | Square obstacle  | ![quad_rrt_](https://github.com/ABorghini/Improving-the-performance-of-RRT-planners-using-informed-sampling/assets/87773518/a49b9cdc-8fea-4e66-8448-31197a92dae7) | ![quad_irrt_](https://github.com/ABorghini/Improving-the-performance-of-RRT-planners-using-informed-sampling/assets/87773518/ed7510fc-22d6-41bb-adbb-4e9a08f070fd) |
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+## Kinodynamic Domain
 |    | RRT* | IRRT* |
 | ------------- |:-------:|:------:|
 | Fixed environment | ![fixed_rrt](https://github.com/ABorghini/Improving-the-performance-of-RRT-planners-using-informed-sampling/assets/87773518/6f043381-c945-45fc-92ac-a2ef1d175a99) | ![fixed_irrt](https://github.com/ABorghini/Improving-the-performance-of-RRT-planners-using-informed-sampling/assets/87773518/6648c600-fb7a-46cc-af44-4f62f7fda039) | 
